@@ -14,6 +14,8 @@ $bot_username = ""
 $seen_status ||= {}
 $api = nil
 $model = nil
+$mentions_counter = Hash.new
+$mentions_counter_timer = Hash.new
 
 def log(*args)
   STDOUT.print "@#{$bot_username}: " + args.map(&:to_s).join(' ') + "\n"
@@ -84,11 +86,32 @@ def handle_toot(toot)
       end
 
       if !is_reblog && mentions_bot
+        extra_mentions = get_extra_mentions(mentions)
+
+        # Remove extra mentions to not spam people after being in the same mention chain 5 times
+        if extra_mentions != ""
+            sorted_mentions = get_mentions_sorted(mentions, account) 
+            if !$mentions_counter[sorted_mentions].nil?
+                # Reset after 15 minutes
+                if (Process.clock_gettime(Process::CLOCK_MONOTONIC)-$mentions_counter_timer[sorted_mentions]) >= 900
+                    $mentions_counter[sorted_mentions] = 1
+                    $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+                else if $mentions_counter[sorted_mentions] == 5
+                    extra_mentions = ""
+                else
+                    $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions]+1
+                end
+            else
+                $mentions_counter[sorted_mentions] = 1
+                $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            end
+        end
+
         status_text = NLP.remove_html_tags(body["status"]["content"])
         log "Mention from $#{account}: #{status_text}"
-        extra_mentions = get_extra_mentions(mentions)
         resp = generate_reply(status_text)
-        resp = "@#{account}#{extra_mentions} #{resp}"
+        resp = "@#{account} #{resp}"
+        resp = "@#{account} #{extra_mentions} #{resp}" if extra_mentions != ""
 
         log "Replying with: #{resp}"
         $api.create_status(resp, { in_reply_to_id: status_id })
@@ -104,10 +127,28 @@ def get_extra_mentions(mentions)
 
   mentions.each do |m|
     next if m['acct'].downcase == $bot_username.downcase
-    extra_mentions = extra_mentions + " @" + m['acct']
+    extra_mentions = extra_mentions + "@" + m['acct'] + " "
   end
 
   extra_mentions
+end
+
+def get_mentions_sorted(mentions, account)
+  sorted_mentions = ""
+  menchies = []
+  menchies.push(account)
+
+  mentions.each do |m|
+    next if m['acct'].downcase == $bot_username.downcase
+    menchies.push(m['acct'])
+  end
+
+  menchies.sort!
+  menchies.each do |m|
+    sorted_mentions = sorted_mentions + "@" + m + " "
+  end
+
+  sorted_mentions
 end
 
 def generate_reply(status_text, limit = 140)
@@ -135,7 +176,6 @@ end
 start()
 
 while true
-  sleep 1
 end
 
 
