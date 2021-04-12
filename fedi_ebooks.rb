@@ -152,7 +152,7 @@ def get_mentions_sorted(mentions, account)
     sorted_mentions = sorted_mentions + "@" + m + " "
   end
 
-  sorted_mentions
+  sorted_mentions.strip
 end
 
 def generate_reply(status_text, limit = 140)
