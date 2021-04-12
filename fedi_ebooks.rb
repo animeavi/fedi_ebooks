@@ -134,7 +134,7 @@ def get_extra_mentions(mentions)
     extra_mentions = extra_mentions + "@" + m['acct'] + " "
   end
 
-  extra_mentions
+  extra_mentions.strip
 end
 
 def get_mentions_sorted(mentions, account)
