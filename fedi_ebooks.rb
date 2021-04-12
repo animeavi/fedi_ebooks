@@ -96,7 +96,7 @@ def handle_toot(toot)
                 if (Process.clock_gettime(Process::CLOCK_MONOTONIC)-$mentions_counter_timer[sorted_mentions]) >= 900
                     $mentions_counter[sorted_mentions] = 1
                     $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-                else if $mentions_counter[sorted_mentions] == 5
+                elsif $mentions_counter[sorted_mentions] == 5
                     extra_mentions = ""
                 else
                     $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions]+1
