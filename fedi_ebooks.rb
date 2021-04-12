@@ -110,8 +110,12 @@ def handle_toot(toot)
         status_text = NLP.remove_html_tags(body["status"]["content"])
         log "Mention from $#{account}: #{status_text}"
         resp = generate_reply(status_text)
-        resp = "@#{account} #{resp}"
-        resp = "@#{account} #{extra_mentions} #{resp}" if extra_mentions != ""
+
+        if extra_mentions != ""
+            resp = "@#{account} #{extra_mentions} #{resp}"
+        else
+            resp = "@#{account} #{resp}"
+        end
 
         log "Replying with: #{resp}"
         $api.create_status(resp, { in_reply_to_id: status_id })
