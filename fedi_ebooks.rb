@@ -185,6 +185,11 @@ def get_mentions_notifications()
   when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
+
+    #body = { "i" => $bearer_token, "includeTypes": [ "reply" ] }
+    #headers = { "Content-Type" => "application/json" }
+    #return JSON.parse(HTTParty.post($instance_url + "/api/i/notifications",
+    #  :body => JSON.dump(body), :headers => headers).to_s)
   else
     log "Invald instance type!"
     exit 1
