@@ -15,7 +15,7 @@ $bot_username = ""
 $seen_status ||= {}
 $api = nil
 $model = nil
-$software = nil
+$software = 0
 $mentions_counter = Hash.new
 $mentions_counter_timer = Hash.new
 
@@ -191,6 +191,33 @@ def delete_notification(id)
   end
 end
 
+def get_software()
+  begin
+    version = Mastodon::REST::Client.new(base_url: $instance_url).instance.version
+    version = version.downcase
+
+    if version.include? "pleroma"
+      $software = InstanceType::PLEROMA
+    else
+      $software = InstanceType::MASTODON
+    end
+
+    return
+  rescue
+  end
+
+  begin
+    headers = { "Content-Type" => "application/json" }
+    if !HTTParty.post($instance_url + "/api/meta",
+      :headers => headers)['driveCapacityPerLocalUserMb'].nil?
+      $software = InstanceType::MISSKEY
+
+      return
+    end
+  rescue
+  end
+end
+
 def init()
   model_path = $corpus_path.split(".")[0] + ".model"
 
@@ -201,18 +228,18 @@ def init()
   log "Loading model #{model_path}"
   $model = Model.load(model_path)
 
-  $api ||= Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
-
-  # TODO: Misskey
-  version = $api.instance.version
-  version = version.downcase
-  if version.include? "pleroma"
-    $software = InstanceType::PLEROMA
+  get_software()
+  if $software == InstanceType::MASTODON || $software == InstanceType::PLEROMA
+    $api ||= Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
+    $bot_username = $api.verify_credentials.acct
+  elsif $software == InstanceType::MISSKEY
+    log "Misskey support not implemented!"
+    exit 1
+    # $bot_username = /api/i 'username'
   else
-    $software = InstanceType::MASTODON
+    log "Invald instance type!"
+    exit 1
   end
-
-  $bot_username = $api.verify_credentials.acct
 end
 
 init()

@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'irb', require: false
 gem 'fast-stemmer'
 gem 'highscore'
 gem 'htmlentities'
