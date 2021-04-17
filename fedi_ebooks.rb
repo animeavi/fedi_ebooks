@@ -10,7 +10,7 @@ require_relative 'nlp.rb'
 
 $instance_url = ""
 $bearer_token = ""
-$corpus_path = ""
+$corpus_path = [ "" ]
 $bot_username = ""
 $seen_status ||= {}
 $api = nil
@@ -222,15 +222,6 @@ def get_software()
 end
 
 def init()
-  model_path = $corpus_path.split(".")[0] + ".model"
-
-  if !File.file?(model_path)
-    Model.consume($corpus_path).save(model_path)
-  end
-
-  log "Loading model #{model_path}"
-  $model = Model.load(model_path)
-
   get_software()
   if $software == InstanceType::MASTODON || $software == InstanceType::PLEROMA
     $api ||= Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
@@ -243,6 +234,15 @@ def init()
     log "Invald instance type!"
     exit 1
   end
+
+  model_path = $bot_username + ".model"
+
+  if !File.file?(model_path)
+    Model.consume_all($corpus_path).save(model_path)
+  end
+
+  log "Loading model #{model_path}"
+  $model = Model.load(model_path)
 end
 
 init()
