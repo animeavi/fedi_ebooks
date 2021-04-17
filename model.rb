@@ -60,11 +60,11 @@ class Model
   def save(path)
     File.open(path, 'wb') do |f|
       f.write(Marshal.dump({
-                             tokens: @tokens,
-                             sentences: @sentences,
-                             mentions: @mentions,
-                             keywords: @keywords
-                           }))
+        tokens: @tokens,
+        sentences: @sentences,
+        mentions: @mentions,
+        keywords: @keywords
+      }))
     end
     self
   end
@@ -87,11 +87,11 @@ class Model
       #append existing properties to new ones and overwrite with new model
       File.open(path, 'wb') do |f|
         f.write(Marshal.dump({
-                               tokens: @tokens.concat(old_tokens),
-                               sentences: @sentences.concat(old_sentences),
-                               mentions: @mentions.concat(old_mentions),
-                               keywords: @keywords.concat(old_keywords)
-                             }))
+          tokens: @tokens.concat(old_tokens),
+          sentences: @sentences.concat(old_sentences),
+          mentions: @mentions.concat(old_mentions),
+          keywords: @keywords.concat(old_keywords)
+        }))
       end
     end
     self
