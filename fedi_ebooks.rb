@@ -34,34 +34,6 @@ def log(*args)
   STDOUT.flush
 end
 
-def handle_stream(ws)
-  ws.on :open do
-    log "Stream online!"
-  end
-
-  ws.on :close do
-    log "Stream closed!"
-    exit 1
-  end
-
-  ws.on :error do |e|
-    log "Error in stream!"
-    log e
-  end
-
-  ws.on :message do |msg|
-    if msg.data.size > 0
-      begin
-        toot = JSON.parse(msg.data)
-        handle_toot(toot)
-      rescue => e
-        log "Content parse error."
-        log e
-      end
-    end
-  end
-end
-
 def reply()
   notifs = get_mentions_notifications()
 
@@ -173,7 +145,8 @@ end
 
 def get_mentions_notifications()
   req_url = ""
-  headers = { "Content-Type" => "application/json", "Authorization" => "Bearer #{$bearer_token}"}
+  headers = { "Content-Type" => "application/json",
+    "Authorization" => "Bearer #{$bearer_token}"}
 
   case $software
   when InstanceType::MASTODON
@@ -186,10 +159,11 @@ def get_mentions_notifications()
     log "Misskey support not implemented!"
     exit 1
 
-    #body = { "i" => $bearer_token, "includeTypes": [ "reply" ] }
+    #body = { "i" => $bearer_token, "includeTypes" => [ "reply" ], "markAsRead" => true }
     #headers = { "Content-Type" => "application/json" }
     #return JSON.parse(HTTParty.post($instance_url + "/api/i/notifications",
     #  :body => JSON.dump(body), :headers => headers).to_s)
+    # NOTE: check if "isRead" is true
   else
     log "Invald instance type!"
     exit 1
@@ -210,8 +184,7 @@ def delete_notification(id)
     req_url = $instance_url + "/api/v1/notifications/destroy_multiple?ids[]=#{id}"
     HTTParty.delete(req_url, :headers => headers)
   when InstanceType::MISSKEY
-    log "Misskey support not implemented!"
-    exit 1
+    # We can only mark them as "read" in Misskey
   else
     log "Invald instance type!"
     exit 1
