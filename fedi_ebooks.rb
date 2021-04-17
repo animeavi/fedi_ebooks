@@ -44,6 +44,9 @@ def reply()
     mentions = n["status"]["mentions"]
     notif_id = n["id"]
 
+    # Don't reply to other bots
+    return if n["account"]["bot"]
+
     # Ignore our own status
     return if account.downcase == $bot_username.downcase
 
