@@ -126,7 +126,7 @@ class Model
     sentences.map do |s|
       tokens = NLP.tokenize(s).reject do |t|
         # Don't include usernames/urls as tokens
-        t.include?('@') || t.include?('http')
+        (t.include?('@') && t.length > 1) || t.include?('http')
       end
 
       tokens.map { |t| tikify(t) }
