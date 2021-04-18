@@ -95,8 +95,9 @@ def reply()
       end
 
       status_text = NLP.remove_html_tags(n["status"]["content"])
-      log "Mention from $#{account}: #{status_text}"
-      resp = generate_reply(status_text)
+      status_mentionless = get_status_mentionless(status_text, mentions)
+      log "Mention from $#{account}: #{status_mentionless}"
+      resp = generate_reply(status_mentionless)
 
       if extra_mentions != ""
         resp = "@#{account} #{extra_mentions} #{resp}"
@@ -140,6 +141,14 @@ def get_mentions_sorted(mentions, account)
   end
 
   sorted_mentions.strip
+end
+
+def get_status_mentionless(status_text, mentions)
+  mentions.each do |m|
+    status_text = status_text.gsub('@' + m['acct'], '')
+  end
+
+  status_text.strip
 end
 
 def generate_reply(status_text, limit = 140)
