@@ -18,10 +18,6 @@ class Model
   # Sentences represented by arrays of tikis
   attr_accessor :sentences
 
-  # @return [Array<Array<Integer>>]
-  # Sentences derived from Twitter mentions
-  attr_accessor :mentions
-
   # @return [Array<String>]
   # The top 200 most important keywords, in descending order
   attr_accessor :keywords
@@ -49,7 +45,6 @@ class Model
       props = Marshal.load(File.open(path, 'rb') { |f| f.read })
       @tokens = props[:tokens]
       @sentences = props[:sentences]
-      @mentions = props[:mentions]
       @keywords = props[:keywords]
     end
     model
@@ -62,7 +57,6 @@ class Model
       f.write(Marshal.dump({
         tokens: @tokens,
         sentences: @sentences,
-        mentions: @mentions,
         keywords: @keywords
       }))
     end
@@ -81,7 +75,6 @@ class Model
       props = Marshal.load(File.open(path, 'rb') { |old| old.read })
       old_tokens = props[:tokens]
       old_sentences = props[:sentences]
-      old_mentions = props[:mentions]
       old_keywords = props[:keywords]
 
       #append existing properties to new ones and overwrite with new model
@@ -89,7 +82,6 @@ class Model
         f.write(Marshal.dump({
           tokens: @tokens.concat(old_tokens),
           sentences: @sentences.concat(old_sentences),
-          mentions: @mentions.concat(old_mentions),
           keywords: @keywords.concat(old_keywords)
         }))
       end
@@ -162,30 +154,20 @@ class Model
   # Consume a sequence of lines
   # @param lines [Array<String>]
   def consume_lines(lines)
-    log "Removing commented lines and sorting mentions"
+    log "Removing commented lines"
 
     statements = []
-    mentions = []
     lines.each do |l|
       next if l.start_with?('#') # Remove commented lines
-      next if l.include?('RT') || l.include?('MT') # Remove soft retweets
-
-      if l.include?('@')
-        mentions << NLP.normalize(l)
-      else
-        statements << NLP.normalize(l)
-      end
+      statements << NLP.normalize(l)
     end
 
     text = statements.join("\n").encode('UTF-8', :invalid => :replace)
-    mention_text = mentions.join("\n").encode('UTF-8', :invalid => :replace)
+    lines = nil; statements = nil # Allow garbage collection
 
-    lines = nil; statements = nil; mentions = nil # Allow garbage collection
-
-    log "Tokenizing #{text.count("\n")} statements and #{mention_text.count("\n")} mentions"
+    log "Tokenizing #{text.count("\n")} statements"
 
     @sentences = mass_tikify(text)
-    @mentions = mass_tikify(mention_text)
 
     log "Ranking keywords"
     @keywords = NLP.keywords(text).top(200).map(&:to_s)
@@ -283,7 +265,7 @@ class Model
   # @param tikis [Array<Integer>]
   # @return [Boolean]
   def verbatim?(tikis)
-    @sentences.include?(tikis) || @mentions.include?(tikis)
+    @sentences.include?(tikis)
   end
 
   # Finds relevant and slightly relevant tokenized sentences to input
@@ -315,8 +297,7 @@ class Model
   # @param limit [Integer] characters available for response
   # @param sentences [Array<Array<Integer>>]
   # @return [String]
-  def make_response(input, limit = 140, sentences = @mentions)
-    # Prefer mentions
+  def make_response(input, limit = 140, sentences = @sentences)
     relevant, slightly_relevant = find_relevant(sentences, input)
 
     if relevant.length >= 3
@@ -325,8 +306,6 @@ class Model
     elsif slightly_relevant.length >= 5
       generator = SuffixGenerator.build(slightly_relevant)
       make_statement(limit, generator)
-    elsif sentences.equal?(@mentions)
-      make_response(input, limit, @sentences)
     else
       make_statement(limit)
     end
