@@ -257,4 +257,5 @@ scheduler.every '15s' do
 end
 
 while true
+  sleep 1
 end
