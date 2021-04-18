@@ -151,7 +151,7 @@ def get_status_mentionless(status_text, mentions)
   status_text.strip
 end
 
-def generate_reply(status_text, limit = 140)
+def generate_reply(status_text, limit = 300)
   $model.make_response(status_text, limit)
 end
 
