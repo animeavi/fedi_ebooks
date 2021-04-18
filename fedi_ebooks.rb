@@ -171,7 +171,7 @@ def get_mentions_notifications()
     log "Misskey support not implemented!"
     exit 1
 
-    #body = { "i" => $bearer_token, "includeTypes" => [ "reply" ], "markAsRead" => true }
+    #body = { "i" => $bearer_token, "includeTypes" => [ "reply" ] }
     #headers = { "Content-Type" => "application/json" }
     #return JSON.parse(HTTParty.post($instance_url + "/api/i/notifications",
     #  :body => JSON.dump(body), :headers => headers).to_s)
@@ -196,7 +196,8 @@ def delete_notification(id)
     req_url = $instance_url + "/api/v1/notifications/destroy_multiple?ids[]=#{id}"
     HTTParty.delete(req_url, :headers => headers)
   when InstanceType::MISSKEY
-    # We can only mark them as "read" in Misskey
+    body = { "i" => $bearer_token, "notificationId" => id}
+    HTTParty.post($instance_url + "/api/notifications/read", :body => JSON.dump(body))
   else
     log "Invald instance type!"
     exit 1
