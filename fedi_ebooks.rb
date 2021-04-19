@@ -4,7 +4,6 @@ require 'http'
 require 'http/request'
 require 'httparty'
 require 'json'
-require 'mastodon'
 require 'net/http/post/multipart'
 require 'rufus-scheduler'
 require_relative 'model.rb'
@@ -277,7 +276,6 @@ def get_mentions_notifications()
 end
 
 def delete_notification(id)
-  req_url = ""
   headers = { "Authorization" => "Bearer #{$bearer_token}"}
 
   case $software
@@ -298,7 +296,9 @@ end
 
 def get_software()
   begin
-    version = Mastodon::REST::Client.new(base_url: $instance_url).instance.version
+    headers = { "Content-Type" => "application/json" }
+    version = HTTParty.get($instance_url + "/api/v1/instance",
+      :headers => headers)['version']
     version = version.downcase
 
     if version.include? "pleroma"
@@ -315,8 +315,8 @@ def get_software()
     headers = { "Content-Type" => "application/json" }
     if !HTTParty.post($instance_url + "/api/meta",
       :headers => headers)['driveCapacityPerLocalUserMb'].nil?
-      $software = InstanceType::MISSKEY
 
+      $software = InstanceType::MISSKEY
       return
     end
   rescue
@@ -326,8 +326,12 @@ end
 def init()
   get_software()
   if $software == InstanceType::MASTODON or $software == InstanceType::PLEROMA
-    $api = Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
-    $bot_username = $api.verify_credentials.acct
+    headers = {  "Content-Type" => "application/json",
+      "Authorization" => "Bearer #{$bearer_token}"}
+    request = HTTParty.get($instance_url + "/api/v1/accounts/verify_credentials",
+      :headers => headers)
+    
+    $bot_username = request["acct"]
   elsif $software == InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
