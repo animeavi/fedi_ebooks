@@ -124,7 +124,6 @@ def reply()
   end
 end
 
-# TODO: add media upload logic and support Misskey
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
   if content_type != "" and $software != InstanceType::PLEROMA
     log "Only Pleroma instances support custom content types!"
@@ -155,6 +154,17 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
 
   HTTParty.post($instance_url + "/api/v1/statuses",
     :body => JSON.dump(body), :headers => headers)
+end
+
+# Shamelessly copied from mastodon-api
+def upload_media(path)
+  headers = { "Authorization" => "Bearer #{$bearer_token}" }
+  file = File.new(path)
+  file = HTTP::FormData::File.new(file)
+  body = { :file => file }
+
+  response = HTTP.headers(headers).public_send(:post, $instance_url + "/api/v1/media", :form => body)
+  JSON.parse(response.body.to_s)['id']
 end
 
 def get_extra_mentions(mentions)
