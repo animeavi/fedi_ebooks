@@ -20,6 +20,7 @@ $software = 0
 $mentions_counter = Hash.new
 $mentions_counter_timer = Hash.new
 $allowed_content_types = ["text/plain", "text/html", "text/markdown", "text/bbcode"]
+$reply_length_limit = 300
 
 class InstanceType
   TYPES = [
@@ -242,7 +243,7 @@ def get_status_mentionless(status_text, mentions)
   status_text.strip
 end
 
-def generate_reply(status_text, limit = 300)
+def generate_reply(status_text, limit = $reply_length_limit)
   $model.make_response(status_text, limit)
 end
 
@@ -355,7 +356,7 @@ init()
 
 # Post a random tweet every 1 hour
 scheduler.every "1h" do
-  create_status($model.make_statement)
+  create_status($model.make_statement($reply_length_limit))
 end
 
 scheduler.every "15s" do
