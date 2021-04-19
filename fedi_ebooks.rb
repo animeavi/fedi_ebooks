@@ -5,6 +5,7 @@ require 'http/request'
 require 'httparty'
 require 'json'
 require 'mastodon'
+require 'net/http/post/multipart'
 require 'rufus-scheduler'
 require_relative 'model.rb'
 require_relative 'nlp.rb'
@@ -183,13 +184,26 @@ def upload_media(path)
   file = HTTP::FormData::File.new(file)
   body = { :file => file }
 
-  response = HTTP.headers(headers).public_send(:post, $instance_url + "/api/v1/media", :form => body)
+  response = HTTP.headers(headers).public_send(:post,
+    $instance_url + "/api/v1/media", :form => body)
   JSON.parse(response.body.to_s)['id']
 end
 
 def upload_media_misskey(path)
-  log "Misskey support not implemented!"
-  exit 1
+  file = File.open(path)
+  url = URI.parse($instance_url + "/api/drive/files/create")
+
+  req = Net::HTTP::Post::Multipart.new(url.path,
+    "file" => UploadIO.new(file, "application/octet-stream", File.basename(path)),
+    "i" => $bearer_token)
+
+  n = Net::HTTP.new(url.host, url.port) 
+  n.use_ssl = (url.scheme == "https")
+  response = n.start do |http|
+    http.request(req)
+  end
+
+  JSON.parse(response.body.to_s)['id']
 end
 
 def get_extra_mentions(mentions)
