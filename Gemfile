@@ -8,3 +8,4 @@ gem 'http'
 gem 'httparty'
 gem 'mastodon-api', git: 'https://github.com/tootsuite/mastodon-api.git'
 gem 'rufus-scheduler'
+gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
