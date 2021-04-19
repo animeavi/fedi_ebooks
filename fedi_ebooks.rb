@@ -1,13 +1,13 @@
 # encoding: utf-8
 
-require 'http'
-require 'http/request'
-require 'httparty'
-require 'json'
-require 'net/http/post/multipart'
-require 'rufus-scheduler'
-require_relative 'model.rb'
-require_relative 'nlp.rb'
+require "http"
+require "http/request"
+require "httparty"
+require "json"
+require "net/http/post/multipart"
+require "rufus-scheduler"
+require_relative "model.rb"
+require_relative "nlp.rb"
 
 $instance_url = ""
 $bearer_token = ""
@@ -41,7 +41,7 @@ end
 scheduler = Rufus::Scheduler.new
 
 def log(*args)
-  STDOUT.print "@#{$bot_username}: " + args.map(&:to_s).join(' ') + "\n"
+  STDOUT.print "@#{$bot_username}: " + args.map(&:to_s).join(" ") + "\n"
   STDOUT.flush
 end
 
@@ -62,7 +62,7 @@ def reply_mastodon()
   notifs.each do |n|
     account = n["account"]["acct"]
     status_id = n["status"]["id"]
-    is_reblog = !n['reblog'].nil?
+    is_reblog = !n["reblog"].nil?
     mentions = n["status"]["mentions"]
     notif_id = n["id"]
 
@@ -87,7 +87,7 @@ def reply_mastodon()
 
     mentions_bot = false
     mentions.each do |m|
-      acct = m['acct']
+      acct = m["acct"]
       if acct.downcase == $bot_username.downcase
         mentions_bot = true
         break
@@ -185,7 +185,7 @@ def upload_media(path)
 
   response = HTTP.headers(headers).public_send(:post,
     $instance_url + "/api/v1/media", :form => body)
-  JSON.parse(response.body.to_s)['id']
+  JSON.parse(response.body.to_s)["id"]
 end
 
 def upload_media_misskey(path)
@@ -202,15 +202,15 @@ def upload_media_misskey(path)
     http.request(req)
   end
 
-  JSON.parse(response.body.to_s)['id']
+  JSON.parse(response.body.to_s)["id"]
 end
 
 def get_extra_mentions(mentions)
   extra_mentions = ""
 
   mentions.each do |m|
-    next if m['acct'].downcase == $bot_username.downcase
-    extra_mentions = extra_mentions + "@" + m['acct'] + " "
+    next if m["acct"].downcase == $bot_username.downcase
+    extra_mentions = extra_mentions + "@" + m["acct"] + " "
   end
 
   extra_mentions.strip
@@ -222,8 +222,8 @@ def get_mentions_sorted(mentions, account)
   menchies.push(account)
 
   mentions.each do |m|
-    next if m['acct'].downcase == $bot_username.downcase
-    menchies.push(m['acct'])
+    next if m["acct"].downcase == $bot_username.downcase
+    menchies.push(m["acct"])
   end
 
   menchies.sort!
@@ -236,7 +236,7 @@ end
 
 def get_status_mentionless(status_text, mentions)
   mentions.each do |m|
-    status_text = status_text.gsub('@' + m['acct'], '')
+    status_text = status_text.gsub("@" + m["acct"], "")
   end
 
   status_text.strip
@@ -298,7 +298,7 @@ def get_software()
   begin
     headers = { "Content-Type" => "application/json" }
     version = HTTParty.get($instance_url + "/api/v1/instance",
-      :headers => headers)['version']
+      :headers => headers)["version"]
     version = version.downcase
 
     if version.include? "pleroma"
@@ -314,7 +314,7 @@ def get_software()
   begin
     headers = { "Content-Type" => "application/json" }
     if !HTTParty.post($instance_url + "/api/meta",
-      :headers => headers)['driveCapacityPerLocalUserMb'].nil?
+      :headers => headers)["driveCapacityPerLocalUserMb"].nil?
 
       $software = InstanceType::MISSKEY
       return
@@ -354,11 +354,11 @@ end
 init()
 
 # Post a random tweet every 1 hour
-scheduler.every '1h' do
+scheduler.every "1h" do
   create_status($model.make_statement)
 end
 
-scheduler.every '15s' do
+scheduler.every "15s" do
   reply()
 end
 

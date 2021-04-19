@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require_relative 'nlp.rb'
+require_relative "nlp.rb"
 
 # This generator uses data similar to a Markov model, but
 # instead of making a chain by looking up bigrams it uses the
@@ -58,7 +58,7 @@ class SuffixGenerator
   def generate(passes = 5, n = :unigrams)
     index = rand(@sentences.length)
     tikis = @sentences[index]
-    used = [index] # Sentences we've already used
+    used = [index] # Sentences we"ve already used
     verbatim = [tikis] # Verbatim sentences to avoid reproducing
 
     0.upto(passes - 1) do
@@ -83,7 +83,7 @@ class SuffixGenerator
           suffix = @sentences[alt[0]][alt[1]..-1]
           potential = tikis[0..start + 1] + suffix
 
-          # Ensure we're not just rebuilding some segment of another sentence
+          # Ensure we"re not just rebuilding some segment of another sentence
           unless verbatim.find { |v| NLP.subseq?(v, potential) || NLP.subseq?(potential, v) }
             used << alt[0]
             variant = potential
@@ -95,7 +95,7 @@ class SuffixGenerator
       end
 
       # If we failed to produce a variation from any alternative, there
-      # is no use running additional passes-- they'll have the same result.
+      # is no use running additional passes-- they"ll have the same result.
       break if variant.nil?
 
       tikis = variant

@@ -1,7 +1,7 @@
 # encoding: utf-8
-require 'fast-stemmer'
-require 'highscore'
-require 'htmlentities'
+require "fast-stemmer"
+require "highscore"
+require "htmlentities"
 
 class NLP
   INTERIM = :interim
@@ -18,26 +18,26 @@ class NLP
   # Stopwords are common words that should often be ignored
   # @return [Array<String>]
   def self.stopwords
-    @stopwords ||= File.exists?('stopwords.txt') ? File.read('stopwords.txt').split : []
+    @stopwords ||= File.exists?("stopwords.txt") ? File.read("stopwords.txt").split : []
   end
 
   # Lazily loads an array of known English nouns
   # @return [Array<String>]
   def self.nouns
-    @nouns ||= File.read('nouns.txt').split
+    @nouns ||= File.read("nouns.txt").split
   end
 
   # Lazily loads an array of known English adjectives
   # @return [Array<String>]
   def self.adjectives
-    @adjectives ||= File.read('adjectives.txt').split
+    @adjectives ||= File.read("adjectives.txt").split
   end
 
   # Lazily load part-of-speech tagging library
   # This can determine whether a word is being used as a noun/adjective/verb
   # @return [EngTagger]
   def self.tagger
-    require 'engtagger'
+    require "engtagger"
     @tagger ||= EngTagger.new
   end
 
@@ -52,7 +52,7 @@ class NLP
   # Remove HTML tags from the text and normalize it
   def self.remove_html_tags(text)
     re = /<("[^"]*"|'[^']*'|[^'">])*>/
-    text = text.gsub(re, '')
+    text = text.gsub(re, "")
     normalize(text)
   end
 
@@ -95,7 +95,7 @@ class NLP
   # @return [Highscore::Keywords]
   def self.keywords(text)
     # Preprocess to remove stopwords (highscore's blacklist is v. slow)
-    text = NLP.tokenize(text).reject { |t| stopword?(t) }.join(' ')
+    text = NLP.tokenize(text).reject { |t| stopword?(t) }.join(" ")
 
     text = Highscore::Content.new(text)
 
@@ -124,7 +124,7 @@ class NLP
     tikis.each do |tiki|
       next if tiki == INTERIM
       token = tokens[tiki]
-      text += ' ' if last_token && space_between?(last_token, token)
+      text += " " if last_token && space_between?(last_token, token)
       text += token
       last_token = token
     end
@@ -173,8 +173,8 @@ class NLP
   def self.unmatched_enclosers?(text)
     enclosers = ['**', '""', '()', '[]', '``', "''"]
     enclosers.each do |pair|
-      starter = Regexp.new('(\W|^)' + Regexp.escape(pair[0]) + '\S')
-      ender = Regexp.new('\S' + Regexp.escape(pair[1]) + '(\W|$)')
+      starter = Regexp.new("(\W|^)" + Regexp.escape(pair[0]) + "\S")
+      ender = Regexp.new("\S" + Regexp.escape(pair[1]) + "(\W|$)")
 
       opened = 0
 

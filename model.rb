@@ -1,11 +1,11 @@
 # encoding: utf-8
 
-require 'json'
-require 'set'
-require 'digest/md5'
-require 'csv'
-require_relative 'nlp.rb'
-require_relative 'suffix.rb'
+require "json"
+require "set"
+require "digest/md5"
+require "csv"
+require_relative "nlp.rb"
+require_relative "suffix.rb"
 
 class Model
   # @return [Array<String>]
@@ -42,7 +42,7 @@ class Model
   def self.load(path)
     model = Model.new
     model.instance_eval do
-      props = Marshal.load(File.open(path, 'rb') { |f| f.read })
+      props = Marshal.load(File.open(path, "rb") { |f| f.read })
       @tokens = props[:tokens]
       @sentences = props[:sentences]
       @keywords = props[:keywords]
@@ -53,7 +53,7 @@ class Model
   # Save model to a file
   # @param path [String]
   def save(path)
-    File.open(path, 'wb') do |f|
+    File.open(path, "wb") do |f|
       f.write(Marshal.dump({
         tokens: @tokens,
         sentences: @sentences,
@@ -72,13 +72,13 @@ class Model
       return
     else
       #read-in and deserialize existing model
-      props = Marshal.load(File.open(path, 'rb') { |old| old.read })
+      props = Marshal.load(File.open(path, "rb") { |old| old.read })
       old_tokens = props[:tokens]
       old_sentences = props[:sentences]
       old_keywords = props[:keywords]
 
       #append existing properties to new ones and overwrite with new model
-      File.open(path, 'wb') do |f|
+      File.open(path, "wb") do |f|
         f.write(Marshal.dump({
           tokens: @tokens.concat(old_tokens),
           sentences: @sentences.concat(old_sentences),
@@ -118,7 +118,7 @@ class Model
     sentences.map do |s|
       tokens = NLP.tokenize(s).reject do |t|
         # Don't include usernames/urls as tokens
-        (t.include?('@') && t.length > 1) || t.include?('http')
+        (t.include?("@") && t.length > 1) || t.include?("http")
       end
 
       tokens.map { |t| tikify(t) }
@@ -128,18 +128,18 @@ class Model
   # Consume a corpus into this model
   # @param path [String]
   def consume(path)
-    content = File.read(path, :encoding => 'utf-8')
+    content = File.read(path, :encoding => "utf-8")
 
-    if path.split('.')[-1] == "json"
+    if path.split(".")[-1] == "json"
       log "Reading json corpus from #{path}"
       lines = JSON.parse(content).map do |tweet|
-        tweet['text']
+        tweet["text"]
       end
-    elsif path.split('.')[-1] == "csv"
+    elsif path.split(".")[-1] == "csv"
       log "Reading CSV corpus from #{path}"
       content = CSV.parse(content)
       header = content.shift
-      text_col = header.index('text')
+      text_col = header.index("text")
       lines = content.map do |tweet|
         tweet[text_col]
       end
@@ -158,11 +158,11 @@ class Model
 
     statements = []
     lines.each do |l|
-      next if l.start_with?('#') # Remove commented lines
+      next if l.start_with?("#") # Remove commented lines
       statements << NLP.normalize(l)
     end
 
-    text = statements.join("\n").encode('UTF-8', :invalid => :replace)
+    text = statements.join("\n").encode("UTF-8", :invalid => :replace)
     lines = nil; statements = nil # Allow garbage collection
 
     log "Tokenizing #{text.count("\n")} statements"
@@ -181,19 +181,19 @@ class Model
   def consume_all(paths)
     lines = []
     paths.each do |path|
-      content = File.read(path, :encoding => 'utf-8')
+      content = File.read(path, :encoding => "utf-8")
 
-      if path.split('.')[-1] == "json"
+      if path.split(".")[-1] == "json"
         log "Reading json corpus from #{path}"
         l = JSON.parse(content).map do |tweet|
-          tweet['text']
+          tweet["text"]
         end
         lines.concat(l)
-      elsif path.split('.')[-1] == "csv"
+      elsif path.split(".")[-1] == "csv"
         log "Reading CSV corpus from #{path}"
         content = CSV.parse(content)
         header = content.shift
-        text_col = header.index('text')
+        text_col = header.index("text")
         l = content.map do |tweet|
           tweet[text_col]
         end
