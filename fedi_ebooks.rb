@@ -12,18 +12,28 @@ $instance_url = ""
 $bearer_token = ""
 $corpus_path = [ "" ]
 $bot_username = ""
-$seen_status ||= {}
+$seen_status = {}
 $api = nil
 $model = nil
 $software = 0
 $mentions_counter = Hash.new
 $mentions_counter_timer = Hash.new
+$allowed_content_types = ["text/plain", "text/html", "text/markdown", "text/bbcode"]
 
 class InstanceType
   TYPES = [
     MASTODON = 1,
     PLEROMA = 2,
     MISSKEY = 3
+  ].freeze
+end
+
+class ContentType
+  TYPES = [
+    PLAIN = "text/plain",
+    HTML = "text/html",
+    MARKDOWN = "text/markdown",
+    BBCODE = "text/bbcode"
   ].freeze
 end
 
@@ -106,12 +116,45 @@ def reply()
       end
 
       log "Replying with: #{resp}"
-      $api.create_status(resp, { in_reply_to_id: status_id })
+      create_status(resp, status_id: status_id)
       delete_notification(notif_id)
     else
       # Timeline event
     end
   end
+end
+
+# TODO: add media upload logic and support Misskey
+def create_status(resp, status_id: nil, content_type: "", media_ids: [])
+  if content_type != "" and $software != InstanceType::PLEROMA
+    log "Only Pleroma instances support custom content types!"
+    exit 1
+  end
+
+  headers = { "Content-Type" => "application/json",
+    "Authorization" => "Bearer #{$bearer_token}" }
+
+  body = Hash.new
+  body["status"] = resp
+
+  if $allowed_content_types.include? content_type
+    body["content_type"] = content_type
+  elsif content_type != ""
+    log "Invalid content type!"
+    log "Allowed content types are: " + $allowed_content_types.to_s
+    exit 1
+  end
+
+  if not status_id.nil?
+    body["in_reply_to_id"] = status_id
+  end
+
+  if media_ids.size > 0
+    body["media_ids"] = media_ids
+  end
+
+  HTTParty.post($instance_url + "/api/v1/statuses",
+    :body => JSON.dump(body), :headers => headers)
 end
 
 def get_extra_mentions(mentions)
@@ -233,8 +276,8 @@ end
 
 def init()
   get_software()
-  if $software == InstanceType::MASTODON || $software == InstanceType::PLEROMA
-    $api ||= Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
+  if $software == InstanceType::MASTODON or $software == InstanceType::PLEROMA
+    $api = Mastodon::REST::Client.new(base_url: $instance_url, bearer_token: $bearer_token)
     $bot_username = $api.verify_credentials.acct
   elsif $software == InstanceType::MISSKEY
     log "Misskey support not implemented!"
@@ -259,7 +302,7 @@ init()
 
 # Post a random tweet every 1 hour
 scheduler.every '1h' do
-  $api.create_status($model.make_statement)
+  create_status($model.make_statement)
 end
 
 scheduler.every '15s' do
