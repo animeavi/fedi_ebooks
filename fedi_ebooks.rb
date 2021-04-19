@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require 'http'
 require 'http/request'
 require 'httparty'
 require 'json'
@@ -45,6 +46,17 @@ def log(*args)
 end
 
 def reply()
+  if $software == InstanceType::MASTODON or $software == InstanceType::PLEROMA
+    reply_mastodon()
+  elsif $software == InstanceType::MISSKEY
+    reply_misskey()
+  else
+    log "Invald instance type!"
+    exit 1
+  end
+end
+
+def reply_mastodon()
   notifs = get_mentions_notifications()
 
   notifs.each do |n|
@@ -118,10 +130,13 @@ def reply()
       log "Replying with: #{resp}"
       create_status(resp, status_id: status_id)
       delete_notification(notif_id)
-    else
-      # Timeline event
     end
   end
+end
+
+def reply_misskey()
+  log "Misskey support not implemented!"
+  exit 1
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
@@ -156,6 +171,11 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
     :body => JSON.dump(body), :headers => headers)
 end
 
+def create_status_misskey(resp, status_id: nil, media_ids: [])
+  log "Misskey support not implemented!"
+  exit 1
+end
+
 # Shamelessly copied from mastodon-api
 def upload_media(path)
   headers = { "Authorization" => "Bearer #{$bearer_token}" }
@@ -165,6 +185,11 @@ def upload_media(path)
 
   response = HTTP.headers(headers).public_send(:post, $instance_url + "/api/v1/media", :form => body)
   JSON.parse(response.body.to_s)['id']
+end
+
+def upload_media_misskey(path)
+  log "Misskey support not implemented!"
+  exit 1
 end
 
 def get_extra_mentions(mentions)
