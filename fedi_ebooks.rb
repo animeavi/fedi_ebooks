@@ -17,9 +17,9 @@ $seen_status = {}
 $api = nil
 $model = nil
 $software = 0
-$mentions_counter = Hash.new
-$mentions_counter_timer = Hash.new
-$allowed_content_types = ["text/plain", "text/html", "text/markdown", "text/bbcode"]
+$mentions_counter = {}
+$mentions_counter_timer = {}
+$allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
 $reply_length_limit = 300
 
 class InstanceType
@@ -32,10 +32,10 @@ end
 
 class ContentType
   TYPES = [
-    PLAIN = "text/plain",
-    HTML = "text/html",
-    MARKDOWN = "text/markdown",
-    BBCODE = "text/bbcode"
+    PLAIN = "text/plain".freeze,
+    HTML = "text/html".freeze,
+    MARKDOWN = "text/markdown".freeze,
+    BBCODE = "text/bbcode".freeze
   ].freeze
 end
 
@@ -47,10 +47,11 @@ def log(*args)
 end
 
 def reply()
-  if $software == InstanceType::MASTODON or $software == InstanceType::PLEROMA
-    reply_mastodon()
-  elsif $software == InstanceType::MISSKEY
-    reply_misskey()
+  case $software
+  when InstanceType::MASTODON, InstanceType::PLEROMA
+    reply_mastodon
+  when InstanceType::MISSKEY
+    reply_misskey
   else
     log "Invald instance type!"
     exit 1
@@ -58,7 +59,7 @@ def reply()
 end
 
 def reply_mastodon()
-  notifs = get_mentions_notifications()
+  notifs = get_mentions_notifications
 
   notifs.each do |n|
     account = n["account"]["acct"]
@@ -96,26 +97,7 @@ def reply_mastodon()
     end
 
     if !is_reblog && mentions_bot
-      extra_mentions = get_extra_mentions(mentions)
-
-      # Remove extra mentions to not spam people after being in the same mention chain 5 times
-      if extra_mentions != ""
-        sorted_mentions = get_mentions_sorted(mentions, account)
-        if !$mentions_counter[sorted_mentions].nil?
-          # Reset after 15 minutes
-          if (Process.clock_gettime(Process::CLOCK_MONOTONIC)-$mentions_counter_timer[sorted_mentions]) >= 900
-            $mentions_counter[sorted_mentions] = 1
-            $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          elsif $mentions_counter[sorted_mentions] == 5
-            extra_mentions = ""
-          else
-            $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions]+1
-          end
-        else
-          $mentions_counter[sorted_mentions] = 1
-          $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        end
-      end
+      extra_mentions = handle_extra_mentions(mentions, account)
 
       status_text = NLP.remove_html_tags(n["status"]["content"])
       status_mentionless = get_status_mentionless(status_text, mentions)
@@ -149,14 +131,14 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
   headers = { "Content-Type" => "application/json",
     "Authorization" => "Bearer #{$bearer_token}" }
 
-  body = Hash.new
+  body = {}
   body["status"] = resp
 
   if $allowed_content_types.include? content_type
     body["content_type"] = content_type
   elsif content_type != ""
     log "Invalid content type!"
-    log "Allowed content types are: " + $allowed_content_types.to_s
+    log "Allowed content types are: #{$allowed_content_types.to_s}"
     exit 1
   end
 
@@ -168,7 +150,7 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
     body["media_ids"] = media_ids
   end
 
-  HTTParty.post($instance_url + "/api/v1/statuses",
+  HTTParty.post("#{$instance_url}/api/v1/statuses",
     :body => JSON.dump(body), :headers => headers)
 end
 
@@ -185,19 +167,19 @@ def upload_media(path)
   body = { :file => file }
 
   response = HTTP.headers(headers).public_send(:post,
-    $instance_url + "/api/v1/media", :form => body)
+    "#{$instance_url}/api/v1/media", :form => body)
   JSON.parse(response.body.to_s)["id"]
 end
 
 def upload_media_misskey(path)
   file = File.open(path)
-  url = URI.parse($instance_url + "/api/drive/files/create")
+  url = URI.parse("#{$instance_url}/api/drive/files/create")
 
   req = Net::HTTP::Post::Multipart.new(url.path,
     "file" => UploadIO.new(file, "application/octet-stream", File.basename(path)),
     "i" => $bearer_token)
 
-  n = Net::HTTP.new(url.host, url.port) 
+  n = Net::HTTP.new(url.host, url.port)
   n.use_ssl = (url.scheme == "https")
   response = n.start do |http|
     http.request(req)
@@ -211,7 +193,7 @@ def get_extra_mentions(mentions)
 
   mentions.each do |m|
     next if m["acct"].downcase == $bot_username.downcase
-    extra_mentions = extra_mentions + "@" + m["acct"] + " "
+    extra_mentions = "#{extra_mentions}@#{m["acct"]} "
   end
 
   extra_mentions.strip
@@ -229,15 +211,39 @@ def get_mentions_sorted(mentions, account)
 
   menchies.sort!
   menchies.each do |m|
-    sorted_mentions = sorted_mentions + "@" + m + " "
+    sorted_mentions = "#{sorted_mentions}@#{m} "
   end
 
   sorted_mentions.strip
 end
 
+def handle_extra_mentions(mentions, account)
+  # Remove extra mentions to not spam people after being in the same mention chain 5 times
+  extra_mentions = get_extra_mentions(mentions)
+  if extra_mentions != ""
+    sorted_mentions = get_mentions_sorted(mentions, account)
+    if !$mentions_counter[sorted_mentions].nil?
+      # Reset after 15 minutes
+      if (Process.clock_gettime(Process::CLOCK_MONOTONIC)-$mentions_counter_timer[sorted_mentions]) >= 900
+        $mentions_counter[sorted_mentions] = 1
+        $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elsif $mentions_counter[sorted_mentions] == 5
+        return ""
+      else
+        $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions]+1
+      end
+    else
+      $mentions_counter[sorted_mentions] = 1
+      $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+  else
+    return ""
+  end
+end
+
 def get_status_mentionless(status_text, mentions)
   mentions.each do |m|
-    status_text = status_text.gsub("@" + m["acct"], "")
+    status_text = status_text.gsub("@#{m["acct"]}", "")
   end
 
   status_text.strip
@@ -254,11 +260,11 @@ def get_mentions_notifications()
 
   case $software
   when InstanceType::MASTODON
-    req_url = $instance_url + "/api/v1/notifications" +
-    "?exclude_types[]=follow&exclude_types[]=favourite&exclude_types[]=reblog" +
-    "&exclude_types[]=poll&exclude_types[]=follow_request"
+    req_url = "#{$instance_url}/api/v1/notifications?exclude_types[]=follow"+
+              "&exclude_types[]=favourite&exclude_types[]=reblog"+
+              "&exclude_types[]=poll&exclude_types[]=follow_request"
   when InstanceType::PLEROMA
-    req_url = $instance_url + "/api/v1/notifications?include_types[]=mention"
+    req_url = "#{$instance_url}/api/v1/notifications?include_types[]=mention"
   when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
@@ -288,7 +294,7 @@ def delete_notification(id)
     HTTParty.delete(req_url, :headers => headers)
   when InstanceType::MISSKEY
     body = { "i" => $bearer_token, "notificationId" => id}
-    HTTParty.post($instance_url + "/api/notifications/read", :body => JSON.dump(body))
+    HTTParty.post("#{$instance_url}/api/notifications/read", :body => JSON.dump(body))
   else
     log "Invald instance type!"
     exit 1
@@ -298,7 +304,7 @@ end
 def get_software()
   begin
     headers = { "Content-Type" => "application/json" }
-    version = HTTParty.get($instance_url + "/api/v1/instance",
+    version = HTTParty.get("#{$instance_url}/api/v1/instance",
       :headers => headers)["version"]
     version = version.downcase
 
@@ -314,7 +320,7 @@ def get_software()
 
   begin
     headers = { "Content-Type" => "application/json" }
-    if !HTTParty.post($instance_url + "/api/meta",
+    if !HTTParty.post("#{$instance_url}/api/meta",
       :headers => headers)["driveCapacityPerLocalUserMb"].nil?
 
       $software = InstanceType::MISSKEY
@@ -326,14 +332,15 @@ end
 
 def init()
   get_software()
-  if $software == InstanceType::MASTODON or $software == InstanceType::PLEROMA
+  case $software
+  when InstanceType::MASTODON, InstanceType::PLEROMA
     headers = {  "Content-Type" => "application/json",
       "Authorization" => "Bearer #{$bearer_token}"}
-    request = HTTParty.get($instance_url + "/api/v1/accounts/verify_credentials",
+    request = HTTParty.get("#{$instance_url}/api/v1/accounts/verify_credentials",
       :headers => headers)
-    
+
     $bot_username = request["acct"]
-  elsif $software == InstanceType::MISSKEY
+  when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
     # $bot_username = /api/i 'username'
@@ -342,7 +349,7 @@ def init()
     exit 1
   end
 
-  model_path = $bot_username + ".model"
+  model_path = "#{$bot_username}.model"
 
   if !File.file?(model_path)
     Model.consume_all($corpus_path).save(model_path)
