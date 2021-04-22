@@ -101,7 +101,7 @@ def reply_mastodon()
 
       status_text = NLP.remove_html_tags(n["status"]["content"])
       status_mentionless = get_status_mentionless(status_text, mentions)
-      log "Mention from $#{account}: #{status_mentionless}"
+      log "Mention from @#{account}: #{status_mentionless}"
       resp = generate_reply(status_mentionless)
 
       if extra_mentions != ""
@@ -118,8 +118,23 @@ def reply_mastodon()
 end
 
 def reply_misskey()
-  log "Misskey support not implemented!"
-  exit 1
+  notifs = get_mentions_notifications()
+
+  notifs.each do |n|
+    account = n["user"]["username"]
+    account = "#{account}@#{n['user']['host']}" if not n['user']['host'].nil?
+    status_id = n["note"]["id"]
+    is_reblog = !n["note"]["renoteId"].nil?
+    mentions = n["note"]["mentions"] # Not terribly useful
+    notif_id = n["id"]
+    content = n["note"]["text"]
+
+    # Ignore read notifications
+    return if n["isRead"]
+
+    # Don't reply to other bots
+    return if n["user"]["isBot"]
+  end
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
@@ -266,14 +281,11 @@ def get_mentions_notifications()
   when InstanceType::PLEROMA
     req_url = "#{$instance_url}/api/v1/notifications?include_types[]=mention"
   when InstanceType::MISSKEY
-    log "Misskey support not implemented!"
-    exit 1
+    body = { "i" => $bearer_token, "includeTypes" => [ "mention" ] }
+    headers = { "Content-Type" => "application/json" }
 
-    #body = { "i" => $bearer_token, "includeTypes" => [ "reply" ] }
-    #headers = { "Content-Type" => "application/json" }
-    #return JSON.parse(HTTParty.post($instance_url + "/api/i/notifications",
-    #  :body => JSON.dump(body), :headers => headers).to_s)
-    # NOTE: check if "isRead" is true
+    return JSON.parse(HTTParty.post("#{$instance_url}/api/i/notifications",
+                                    :body => JSON.dump(body), :headers => headers).to_s)
   else
     log "Invald instance type!"
     exit 1
@@ -343,7 +355,13 @@ def init()
   when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
-    # $bot_username = /api/i 'username'
+
+    body = { "i" => $bearer_token }
+    headers = { "Content-Type" => "application/json" }
+    request = JSON.parse(HTTParty.post("#{$instance_url}/api/i",
+                                       :body => JSON.dump(body), :headers => headers).to_s)
+
+    $bot_username = request["username"]
   else
     log "Invald instance type!"
     exit 1
