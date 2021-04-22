@@ -1,17 +1,19 @@
 # encoding: utf-8
 
+# rubocop:disable Style/StringLiterals, Style/GlobalVars, Lint/NonLocalExitFromIterator
+
 require "http"
 require "http/request"
 require "httparty"
 require "json"
 require "net/http/post/multipart"
 require "rufus-scheduler"
-require_relative "model.rb"
-require_relative "nlp.rb"
+require_relative "model"
+require_relative "nlp"
 
 $instance_url = ""
 $bearer_token = ""
-$corpus_path = [ "" ]
+$corpus_path = [""]
 $bot_username = ""
 $seen_status = {}
 $api = nil
@@ -42,23 +44,23 @@ end
 scheduler = Rufus::Scheduler.new
 
 def log(*args)
-  STDOUT.print "@#{$bot_username}: " + args.map(&:to_s).join(" ") + "\n"
-  STDOUT.flush
+  $stdout.print "@#{$bot_username}: " + args.map(&:to_s).join(" ") + "\n"
+  $stdout.flush
 end
 
-def reply()
+def reply
   case $software
   when InstanceType::MASTODON, InstanceType::PLEROMA
     reply_mastodon
   when InstanceType::MISSKEY
     reply_misskey
   else
-    log "Invald instance type!"
+    log "Invalid instance type!"
     exit 1
   end
 end
 
-def reply_mastodon()
+def reply_mastodon
   notifs = get_mentions_notifications
 
   notifs.each do |n|
@@ -103,12 +105,7 @@ def reply_mastodon()
       status_mentionless = get_status_mentionless(status_text, mentions)
       log "Mention from @#{account}: #{status_mentionless}"
       resp = generate_reply(status_mentionless)
-
-      if extra_mentions != ""
-        resp = "@#{account} #{extra_mentions} #{resp}"
-      else
-        resp = "@#{account} #{resp}"
-      end
+      resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
       log "Replying with: #{resp}"
       create_status(resp, status_id: status_id)
@@ -117,12 +114,12 @@ def reply_mastodon()
   end
 end
 
-def reply_misskey()
-  notifs = get_mentions_notifications()
+def reply_misskey
+  notifs = get_mentions_notifications
 
   notifs.each do |n|
     account = n["user"]["username"]
-    account = "#{account}@#{n['user']['host']}" if not n['user']['host'].nil?
+    account = "#{account}@#{n["user"]["host"]}" unless n["user"]["host"].nil?
     status_id = n["note"]["id"]
     is_reblog = !n["note"]["renoteId"].nil?
     mentions = n["note"]["mentions"] # Not terribly useful
@@ -138,13 +135,13 @@ def reply_misskey()
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
-  if content_type != "" and $software != InstanceType::PLEROMA
+  if (content_type != "") && ($software != InstanceType::PLEROMA)
     log "Only Pleroma instances support custom content types!"
     exit 1
   end
 
-  headers = { "Content-Type" => "application/json",
-    "Authorization" => "Bearer #{$bearer_token}" }
+  headers = {"Content-Type": "application/json",
+             "Authorization": "Bearer #{$bearer_token}"}
 
   body = {}
   body["status"] = resp
@@ -153,20 +150,15 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
     body["content_type"] = content_type
   elsif content_type != ""
     log "Invalid content type!"
-    log "Allowed content types are: #{$allowed_content_types.to_s}"
+    log "Allowed content types are: #{$allowed_content_types}"
     exit 1
   end
 
-  if not status_id.nil?
-    body["in_reply_to_id"] = status_id
-  end
-
-  if media_ids.size > 0
-    body["media_ids"] = media_ids
-  end
+  body["in_reply_to_id"] = status_id unless status_id.nil?
+  body["media_ids"] = media_ids if media_ids.size > 0
 
   HTTParty.post("#{$instance_url}/api/v1/statuses",
-    :body => JSON.dump(body), :headers => headers)
+    body: JSON.dump(body), headers: headers)
 end
 
 def create_status_misskey(resp, status_id: nil, media_ids: [])
@@ -176,13 +168,13 @@ end
 
 # Shamelessly copied from mastodon-api
 def upload_media(path)
-  headers = { "Authorization" => "Bearer #{$bearer_token}" }
+  headers = {"Authorization": "Bearer #{$bearer_token}"}
   file = File.new(path)
   file = HTTP::FormData::File.new(file)
-  body = { :file => file }
+  body = {file: file}
 
   response = HTTP.headers(headers).public_send(:post,
-    "#{$instance_url}/api/v1/media", :form => body)
+    "#{$instance_url}/api/v1/media", form: body)
   JSON.parse(response.body.to_s)["id"]
 end
 
@@ -191,8 +183,8 @@ def upload_media_misskey(path)
   url = URI.parse("#{$instance_url}/api/drive/files/create")
 
   req = Net::HTTP::Post::Multipart.new(url.path,
-    "file" => UploadIO.new(file, "application/octet-stream", File.basename(path)),
-    "i" => $bearer_token)
+    "file": UploadIO.new(file, "application/octet-stream", File.basename(path)),
+    "i": $bearer_token)
 
   n = Net::HTTP.new(url.host, url.port)
   n.use_ssl = (url.scheme == "https")
@@ -208,6 +200,7 @@ def get_extra_mentions(mentions)
 
   mentions.each do |m|
     next if m["acct"].downcase == $bot_username.downcase
+
     extra_mentions = "#{extra_mentions}@#{m["acct"]} "
   end
 
@@ -221,6 +214,7 @@ def get_mentions_sorted(mentions, account)
 
   mentions.each do |m|
     next if m["acct"].downcase == $bot_username.downcase
+
     menchies.push(m["acct"])
   end
 
@@ -239,13 +233,13 @@ def handle_extra_mentions(mentions, account)
     sorted_mentions = get_mentions_sorted(mentions, account)
     if !$mentions_counter[sorted_mentions].nil?
       # Reset after 15 minutes
-      if (Process.clock_gettime(Process::CLOCK_MONOTONIC)-$mentions_counter_timer[sorted_mentions]) >= 900
+      if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $mentions_counter_timer[sorted_mentions]) >= 900
         $mentions_counter[sorted_mentions] = 1
         $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       elsif $mentions_counter[sorted_mentions] == 5
         return ""
       else
-        $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions]+1
+        $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions] + 1
       end
     else
       $mentions_counter[sorted_mentions] = 1
@@ -268,116 +262,111 @@ def generate_reply(status_text, limit = $reply_length_limit)
   $model.make_response(status_text, limit)
 end
 
-def get_mentions_notifications()
-  req_url = ""
-  headers = { "Content-Type" => "application/json",
-    "Authorization" => "Bearer #{$bearer_token}"}
+def get_mentions_notifications
+  headers = {"Content-Type": "application/json",
+             "Authorization": "Bearer #{$bearer_token}"}
 
   case $software
   when InstanceType::MASTODON
-    req_url = "#{$instance_url}/api/v1/notifications?exclude_types[]=follow"+
-              "&exclude_types[]=favourite&exclude_types[]=reblog"+
-              "&exclude_types[]=poll&exclude_types[]=follow_request"
+    req_url = "#{$instance_url}/api/v1/notifications?exclude_types[]=follow" \
+      "&exclude_types[]=favourite&exclude_types[]=reblog" \
+      "&exclude_types[]=poll&exclude_types[]=follow_request"
   when InstanceType::PLEROMA
     req_url = "#{$instance_url}/api/v1/notifications?include_types[]=mention"
   when InstanceType::MISSKEY
-    body = { "i" => $bearer_token, "includeTypes" => [ "mention" ] }
-    headers = { "Content-Type" => "application/json" }
+    body = {"i": $bearer_token, "includeTypes": ["mention"]}
+    headers = {"Content-Type": "application/json"}
 
     return JSON.parse(HTTParty.post("#{$instance_url}/api/i/notifications",
-                                    :body => JSON.dump(body), :headers => headers).to_s)
+      body: JSON.dump(body), headers: headers).to_s)
   else
-    log "Invald instance type!"
+    log "Invalid instance type!"
     exit 1
   end
 
-  JSON.parse(HTTParty.get(req_url, :headers => headers).to_s)
+  JSON.parse(HTTParty.get(req_url, headers: headers).to_s)
 end
 
 def delete_notification(id)
-  headers = { "Authorization" => "Bearer #{$bearer_token}"}
+  headers = {"Authorization": "Bearer #{$bearer_token}"}
 
   case $software
   when InstanceType::MASTODON
     req_url = $instance_url + "/api/v1/notifications/#{id}/dismiss"
-    HTTParty.post(req_url, :headers => headers)
+    HTTParty.post(req_url, headers: headers)
   when InstanceType::PLEROMA
     req_url = $instance_url + "/api/v1/notifications/destroy_multiple?ids[]=#{id}"
-    HTTParty.delete(req_url, :headers => headers)
+    HTTParty.delete(req_url, headers: headers)
   when InstanceType::MISSKEY
-    body = { "i" => $bearer_token, "notificationId" => id}
-    HTTParty.post("#{$instance_url}/api/notifications/read", :body => JSON.dump(body))
+    body = {"i": $bearer_token, "notificationId": id}
+    HTTParty.post("#{$instance_url}/api/notifications/read",
+      body: JSON.dump(body), headers: headers)
   else
-    log "Invald instance type!"
+    log "Invalid instance type!"
     exit 1
   end
 end
 
-def get_software()
+def get_software
   begin
-    headers = { "Content-Type" => "application/json" }
+    headers = {"Content-Type": "application/json"}
     version = HTTParty.get("#{$instance_url}/api/v1/instance",
-      :headers => headers)["version"]
+      headers: headers)["version"]
     version = version.downcase
-
-    if version.include? "pleroma"
-      $software = InstanceType::PLEROMA
-    else
-      $software = InstanceType::MASTODON
-    end
+    $software = version.include?("pleroma") ? InstanceType::PLEROMA : InstanceType::MASTODON
 
     return
   rescue
+    # Ignored
   end
 
   begin
-    headers = { "Content-Type" => "application/json" }
-    if !HTTParty.post("#{$instance_url}/api/meta",
-      :headers => headers)["driveCapacityPerLocalUserMb"].nil?
-
+    headers = {"Content-Type": "application/json"}
+    unless HTTParty.post("#{$instance_url}/api/meta",
+      headers: headers)["driveCapacityPerLocalUserMb"].nil?
       $software = InstanceType::MISSKEY
+
       return
     end
   rescue
+    # Ignored
   end
 end
 
-def init()
-  get_software()
+def init
+  get_software
   case $software
   when InstanceType::MASTODON, InstanceType::PLEROMA
-    headers = {  "Content-Type" => "application/json",
-      "Authorization" => "Bearer #{$bearer_token}"}
+    headers = {"Content-Type": "application/json",
+               "Authorization": "Bearer #{$bearer_token}"}
     request = HTTParty.get("#{$instance_url}/api/v1/accounts/verify_credentials",
-      :headers => headers)
+      headers: headers)
 
     $bot_username = request["acct"]
   when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
 
-    body = { "i" => $bearer_token }
-    headers = { "Content-Type" => "application/json" }
+    body = {"i": $bearer_token}
+    headers = {"Content-Type": "application/json"}
     request = JSON.parse(HTTParty.post("#{$instance_url}/api/i",
-                                       :body => JSON.dump(body), :headers => headers).to_s)
+      body: JSON.dump(body), headers: headers).to_s)
 
     $bot_username = request["username"]
   else
-    log "Invald instance type!"
+    log "Invalid instance type!"
     exit 1
   end
 
   model_path = "#{$bot_username}.model"
 
-  if !File.file?(model_path)
-    Model.consume_all($corpus_path).save(model_path)
-  end
+  Model.consume_all($corpus_path).save(model_path) unless File.file?(model_path)
 
   log "Loading model #{model_path}"
   $model = Model.load(model_path)
 end
 
-init()
+init
 
 # Post a random tweet every 1 hour
 scheduler.every "1h" do
@@ -385,9 +374,9 @@ scheduler.every "1h" do
 end
 
 scheduler.every "15s" do
-  reply()
+  reply
 end
 
-while true
+loop do
   sleep 1
 end

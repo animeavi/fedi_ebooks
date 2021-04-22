@@ -1,4 +1,6 @@
 # encoding: utf-8
+# rubocop:disable Style/StringLiterals
+
 require "fast-stemmer"
 require "highscore"
 require "htmlentities"

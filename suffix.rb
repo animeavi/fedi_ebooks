@@ -1,6 +1,7 @@
 # encoding: utf-8
+# rubocop:disable Style/StringLiterals
 
-require_relative "nlp.rb"
+require_relative "nlp"
 
 # This generator uses data similar to a Markov model, but
 # instead of making a chain by looking up bigrams it uses the

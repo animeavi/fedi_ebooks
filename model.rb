@@ -1,11 +1,12 @@
 # encoding: utf-8
+# rubocop:disable Style/StringLiterals
 
 require "json"
 require "set"
 require "digest/md5"
 require "csv"
-require_relative "nlp.rb"
-require_relative "suffix.rb"
+require_relative "nlp"
+require_relative "suffix"
 
 class Model
   # @return [Array<String>]
