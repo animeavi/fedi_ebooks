@@ -19,6 +19,7 @@ $seen_status = {}
 $api = nil
 $model = nil
 $software = 0
+$software_string = ""
 $mentions_counter = {}
 $mentions_counter_timer = {}
 $allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
@@ -364,6 +365,7 @@ def init
       headers: headers)
 
     $bot_username = request["acct"]
+    $software_string = $software == InstanceType::MASTODON ? "Mastodon" : "Pleroma"
   when InstanceType::MISSKEY
     log "Misskey support not implemented!"
     exit 1
@@ -374,6 +376,7 @@ def init
       body: JSON.dump(body), headers: headers).to_s)
 
     $bot_username = request["username"]
+    $software_string = "Misskey"
   else
     log "Invalid instance type!"
     exit 1
@@ -385,6 +388,8 @@ def init
 
   log "Loading model #{model_path}"
   $model = Model.load(model_path)
+
+  log "Connected to #{$instance_url} (#{$software_string})"
 end
 
 init
