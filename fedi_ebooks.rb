@@ -23,6 +23,8 @@ $mentions_counter = {}
 $mentions_counter_timer = {}
 $allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
 $reply_length_limit = 300
+$username_remote_regex = /([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*)[@＠][-a-zA-Z0-9@:%._+\~#=]{2,256}\.[a-z]{2,63}\b(?:[-a-zA-Z0-9@:%\_+.~#?&\/=]*))/
+$username_local_regex = /(?:\s|^.?|[^\p{L}0-9_＠!@#$%&\/*]|\s[^\p{L}0-9_＠!@#$%&*])([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*))(?=[^A-Za-z0-9_@＠]|$)/
 
 class InstanceType
   TYPES = [
