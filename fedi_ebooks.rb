@@ -249,17 +249,20 @@ def handle_extra_mentions(mentions, account)
       if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $mentions_counter_timer[sorted_mentions]) >= 900
         $mentions_counter[sorted_mentions] = 1
         $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        return extra_mentions
       elsif $mentions_counter[sorted_mentions] == 5
         return ""
       else
         $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions] + 1
+        return extra_mentions
       end
     else
       $mentions_counter[sorted_mentions] = 1
       $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      return extra_mentions
     end
   else
-    return ""
+    return extra_mentions
   end
 end
 
