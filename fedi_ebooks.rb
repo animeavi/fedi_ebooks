@@ -73,20 +73,28 @@ def reply_mastodon
     notif_id = n["id"]
 
     # Don't reply to other bots
-    return if n["account"]["bot"]
+    if n["account"]["bot"]
+      delete_notification(notif_id)
+      next
+    end
 
     # Ignore our own status
-    return if account.downcase == $bot_username.downcase
+    if account.downcase == $bot_username.downcase
+      delete_notification(notif_id)
+      next
+    end
 
     if is_reblog && $bot_username.downcase == n["reblog"]["account"]["acct"].downcase
       # Someone reblogged our status
-      return
+      delete_notification(notif_id)
+      next
     end
 
     # Avoid responding to duplicate status
     if $seen_status[status_id]
       log "Not handling duplicate status #{status_id}"
-      return
+      delete_notification(notif_id)
+      next
     else
       $seen_status[status_id] = true
     end
@@ -100,19 +108,22 @@ def reply_mastodon
       end
     end
 
-    next unless !is_reblog && mentions_bot
+    if is_reblog && !mentions_bot
+      delete_notification(notif_id)
+      next
+    end
 
-	extra_mentions = handle_extra_mentions(mentions, account)
+    extra_mentions = handle_extra_mentions(mentions, account)
 
-	status_text = NLP.remove_html_tags(n["status"]["content"])
-	status_mentionless = get_status_mentionless(status_text, mentions)
-	log "Mention from @#{account}: #{status_mentionless}"
-	resp = generate_reply(status_mentionless)
-	resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
+    status_text = NLP.remove_html_tags(n["status"]["content"])
+    status_mentionless = get_status_mentionless(status_text, mentions)
+    log "Mention from @#{account}: #{status_mentionless}"
+    resp = generate_reply(status_mentionless)
+    resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
-	log "Replying with: #{resp}"
-	create_status(resp, status_id: status_id)
-	delete_notification(notif_id)
+    log "Replying with: #{resp}"
+    create_status(resp, status_id: status_id)
+    delete_notification(notif_id)
   end
 end
 
@@ -129,10 +140,10 @@ def reply_misskey
     content = n["note"]["text"]
 
     # Ignore read notifications
-    return if n["isRead"]
+    next if n["isRead"]
 
     # Don't reply to other bots
-    return if n["user"]["isBot"]
+    next if n["user"]["isBot"]
   end
 end
 
