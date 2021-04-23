@@ -370,7 +370,7 @@ end
 
 init
 
-# Post a random tweet every 1 hour
+# Post a random post every 1 hour
 scheduler.every "1h" do
   create_status($model.make_statement($reply_length_limit))
 end
