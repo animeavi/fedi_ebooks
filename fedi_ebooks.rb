@@ -23,8 +23,8 @@ $mentions_counter = {}
 $mentions_counter_timer = {}
 $allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
 $reply_length_limit = 300
-$username_remote_regex = /([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*)[@＠][-a-zA-Z0-9@:%._+\~#=]{2,256}\.[a-z]{2,63}\b(?:[-a-zA-Z0-9@:%\_+.~#?&\/=]*))/
-$username_local_regex = /(?:\s|^.?|[^\p{L}0-9_＠!@#$%&\/*]|\s[^\p{L}0-9_＠!@#$%&*])([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*))(?=[^A-Za-z0-9_@＠]|$)/
+$username_remote_regex = %r{([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*)[@＠][-a-zA-Z0-9@:%._+\~#=]{2,256}\.[a-z]{2,63}\b(?:[-a-zA-Z0-9@:%\_+.~#?&/=]*))}
+$username_local_regex = %r{(?:\s|^.?|[^\p{L}0-9_＠!@#$%&/*]|\s[^\p{L}0-9_＠!@#$%&*])([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*))(?=[^A-Za-z0-9_@＠]|$)}
 
 class InstanceType
   TYPES = [
@@ -100,19 +100,19 @@ def reply_mastodon
       end
     end
 
-    if !is_reblog && mentions_bot
-      extra_mentions = handle_extra_mentions(mentions, account)
+    next unless !is_reblog && mentions_bot
 
-      status_text = NLP.remove_html_tags(n["status"]["content"])
-      status_mentionless = get_status_mentionless(status_text, mentions)
-      log "Mention from @#{account}: #{status_mentionless}"
-      resp = generate_reply(status_mentionless)
-      resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
+	extra_mentions = handle_extra_mentions(mentions, account)
 
-      log "Replying with: #{resp}"
-      create_status(resp, status_id: status_id)
-      delete_notification(notif_id)
-    end
+	status_text = NLP.remove_html_tags(n["status"]["content"])
+	status_mentionless = get_status_mentionless(status_text, mentions)
+	log "Mention from @#{account}: #{status_mentionless}"
+	resp = generate_reply(status_mentionless)
+	resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
+
+	log "Replying with: #{resp}"
+	create_status(resp, status_id: status_id)
+	delete_notification(notif_id)
   end
 end
 
