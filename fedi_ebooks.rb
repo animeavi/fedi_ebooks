@@ -90,6 +90,11 @@ def reply_mastodon
       next
     end
 
+    if is_reblog
+      delete_notification(notif_id)
+      next
+    end
+
     # Avoid responding to duplicate status
     if $seen_status[status_id]
       log "Not handling duplicate status #{status_id}"
@@ -108,7 +113,7 @@ def reply_mastodon
       end
     end
 
-    if is_reblog && !mentions_bot
+    unless mentions_bot
       delete_notification(notif_id)
       next
     end
