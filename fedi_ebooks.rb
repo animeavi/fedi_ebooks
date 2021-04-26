@@ -396,7 +396,9 @@ init
 
 # Post a random post every 1 hour
 scheduler.every "1h" do
-  create_status($model.make_statement($reply_length_limit))
+  status = $model.make_statement($reply_length_limit)
+  log "Posting: #{status}"
+  create_status(status)
 end
 
 scheduler.every "15s" do
