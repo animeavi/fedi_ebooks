@@ -193,7 +193,7 @@ def reply_timeline_mastodon
     end
 
     if should_reply
-      log "Post on on the TL from @#{account}: #{status_mentionless}"
+      log "Post on the TL from @#{account}: #{status_mentionless}"
 
       extra_mentions = handle_extra_mentions(mentions, account)
       resp = generate_reply(status_mentionless)
