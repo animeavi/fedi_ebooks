@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-# rubocop:disable Style/StringLiterals, Style/GlobalVars, Lint/NonLocalExitFromIterator
+# rubocop:disable Style/StringLiterals, Style/GlobalVars
 
 require "http"
 require "http/request"
@@ -16,8 +16,11 @@ $bearer_token = ""
 $corpus_path = [""]
 $bot_username = ""
 $seen_status = {}
+$last_id_tl = ""
 $api = nil
 $model = nil
+$top20 = nil
+$top100 = nil
 $software = 0
 $software_string = ""
 $mentions_counter = {}
@@ -57,6 +60,18 @@ def reply
     reply_mastodon
   when InstanceType::MISSKEY
     reply_misskey
+  else
+    log "Invalid instance type!"
+    exit 1
+  end
+end
+
+def reply_timeline
+  case $software
+  when InstanceType::MASTODON, InstanceType::PLEROMA
+    reply_timeline_mastodon
+  when InstanceType::MISSKEY
+    reply_timeline_misskey
   else
     log "Invalid instance type!"
     exit 1
@@ -107,8 +122,7 @@ def reply_mastodon
 
     mentions_bot = false
     mentions.each do |m|
-      acct = m["acct"]
-      if acct.downcase == $bot_username.downcase
+      if m["acct"].downcase == $bot_username.downcase
         mentions_bot = true
         break
       end
@@ -133,7 +147,70 @@ def reply_mastodon
   end
 end
 
+def reply_timeline_mastodon
+  headers = {"Content-Type": "application/json", "Authorization": "Bearer #{$bearer_token}"}
+  tl = HTTParty.get("#{$instance_url}/api/v1/timelines/home?since_id=#{$last_id_tl}", headers: headers)
+
+  i = 0
+  tl.each do |t|
+    if i == 0
+      $last_id_tl = t['id']
+      i = 1
+    end
+
+    account = t["account"]["acct"]
+    status_id = t["id"]
+    is_reblog = !t["reblog"].nil?
+    mentions = t["mentions"]
+
+    next if $seen_status[status_id]
+    next if t["account"]["bot"]
+    next if account.downcase == $bot_username.downcase
+    next if is_reblog
+
+    mentions_bot = false
+    mentions.each do |m|
+      if m["acct"].downcase == $bot_username.downcase
+        mentions_bot = true
+        break
+      end
+    end
+
+    next if mentions_bot
+
+    status_text = NLP.remove_html_tags(t["content"])
+    status_mentionless = get_status_mentionless(status_text, mentions)
+
+    tokens = NLP.tokenize(status_mentionless)
+    interesting = tokens.find { |tk| $top100.include?(tk.downcase) }
+    very_interesting = tokens.find { |tk| $top20.include?(tk.downcase) }
+
+    should_reply = false
+    if very_interesting
+      should_reply = true if rand < 0.05
+    elsif interesting
+      should_reply = true if rand < 0.005
+    end
+
+    if should_reply
+      log "Post on on the TL from @#{account}: #{status_mentionless}"
+
+      extra_mentions = handle_extra_mentions(mentions, account)
+      resp = generate_reply(status_mentionless)
+      resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
+
+      log "Replying with: #{resp}"
+      create_status(resp, status_id: status_id)
+    end
+
+    break # Only try the first valid status
+  end
+end
+
 def reply_misskey
+  log "reply_misskey: TODO"
+  return
+
   notifs = get_mentions_notifications
 
   notifs.each do |n|
@@ -151,6 +228,10 @@ def reply_misskey
     # Don't reply to other bots
     next if n["user"]["isBot"]
   end
+end
+
+def reply_timeline_misskey
+  log "reply_timeline_misskey: TODO"
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
@@ -388,6 +469,8 @@ def init
 
   log "Loading model #{model_path}"
   $model = Model.load(model_path)
+  $top20 = $model.keywords.take(20)
+  $top100 = $model.keywords.take(100)
 
   log "Connected to #{$instance_url} (#{$software_string})"
 end
@@ -403,6 +486,9 @@ end
 
 scheduler.every "15s" do
   reply
+
+  # Comment this out if you want timeline replies
+  #reply_timeline
 end
 
 loop do
