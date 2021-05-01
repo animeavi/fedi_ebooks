@@ -6,7 +6,7 @@ I wanted something that used [mispy's twitter_ebooks](https://github.com/mispy/t
 
 # How to use
 
-You need to create an app, and generate a bearer token for your bot, we have a script for that, but first you need to edit the following values in **config.yml**
+You need to create an app, and generate a bearer token for your bot, we have a script for that. You can set those values manually in **config.yml** *or* you can use the script in the next step to do so interactively. 
 
 * `INSTANCE_URL`
 * `BOT_USERNAME`

@@ -6,13 +6,43 @@ require 'yaml'
 yml_config = "config.yml"
 config = YAML.load(File.read(yml_config))
 
-print "Your instance url (leave blank to use config value) [#{config['INSTANCE_URL']}]: "
+def yes_no_choice(temp)
+  case temp.strip.downcase
+  when "", "y", "yes"
+    return true
+  else
+    return false
+  end
+end
+
+print "Your instance's url [default: #{config['INSTANCE_URL']}]: "
 temp = gets.chomp
 instance_url = temp.strip == "" ? config["INSTANCE_URL"] : temp
 
-print "Your bot's username (leave blank to use config value) [#{config["BOT_USERNAME"]}]: "
+if instance_url != config["INSTANCE_URL"]
+  print "Save instance's url to #{yml_config}? (y/n) [default: YES]: "
+  temp = gets.chomp
+  
+  if yes_no_choice(temp)
+    config["INSTANCE_URL"] = instance_url
+    File.open(yml_config, 'w') { |f| YAML.dump(config, f) }
+    print "\n"
+  end
+end
+
+print "Your bot's username [default: #{config["BOT_USERNAME"]}]: "
 temp = gets.chomp
 bot_username = temp.strip == "" ? config["BOT_USERNAME"] : temp
+
+if bot_username != config["BOT_USERNAME"]
+  print "Save bot's username to #{yml_config}? (y/n) [default: YES]: "
+  temp = gets.chomp
+  
+  if yes_no_choice(temp)
+    config["BOT_USERNAME"] = bot_username
+    File.open(yml_config, 'w') { |f| YAML.dump(config, f) }
+  end
+end
 
 puts "\nCreating app..."
 
@@ -46,15 +76,9 @@ bearer_token = data["access_token"]
 puts "Your Bearer Token has been generate successfully!"
 puts "Your Bearer Token is: #{bearer_token}}"
 
-save_cfg = false
-print "Save it to #{yml_config}? (y/n) [default: y]: "
-temp = gets.chomp.strip.downcase
-
-
-case temp
-when "", "y", "yes"
-  save_cfg = true
-end
+print "Save it to #{yml_config}? (y/n) [default: YES]: "
+temp = gets.chomp
+save_cfg = yes_no_choice(temp)
 
 if save_cfg
   puts "Updating #{yml_config} with the generated Bearer Token..."
