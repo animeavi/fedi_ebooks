@@ -1,0 +1,9 @@
+INSTANCE_URL: 'https://example.com'
+
+BEARER_TOKEN: 'abcdfg'
+
+CORPUS_FILES: ['corpus.txt']
+
+BOT_USERNAME: 'bender'
+
+REPLY_LENGTH: 300

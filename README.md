@@ -8,11 +8,11 @@ I wanted something that used [mispy's twitter_ebooks](https://github.com/mispy/t
 
 You need to create an app, and a bearer token for your bot, for your instance, you can Google how to do that for now, I may add a small script to help with that in the future if I feel like it.
 
-With you bearer token in hand, you can edit the following lines in **fedi_ebooks.rb**
+With you bearer token in hand, you can edit the following lines in **config.yml**
 
-* `$instance_url`
-* `$bearer_token`
-* `$bot_username`
+* `INSTANCE_URL`
+* `BEARER_TOKEN`
+* `BOT_USERNAME`
 
 The first is your instance's url, the second is the bearer token you generated, and the third one is your bot's username. We will pull the last one from the API, so if you can leave it as is if you want.
 
@@ -47,9 +47,9 @@ To use it run the following command (from the main project directory)
 The output TXT argument is optional, if you don't use it, it will be saved to **corpus.txt**, now you have a file that can be used for your bot.
 
 
-Now edit **fedi_ebooks.rb** again and modify `$corpus_path` to add the path to your corpus file, this variable is a list and can have multiple corpus files (if you wish), like
+Now edit **config.yml** again and modify `CORPUS_FILES` to add the path to your corpus file, this value is a list and can have multiple corpus files (if you wish), like
 
-`$corpus_path = ["file1.txt", "file2.txt", "twitter.json"]`
+`CORPUS_FILES: ['corpus.txt', 'file2.txt', 'twitter.json']`
 
 ## Installing Ruby dependencies
 

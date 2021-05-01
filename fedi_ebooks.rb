@@ -8,25 +8,30 @@ require "httparty"
 require "json"
 require "net/http/post/multipart"
 require "rufus-scheduler"
+require 'yaml'
 require_relative "model"
 require_relative "nlp"
 
-$instance_url = ""
-$bearer_token = ""
-$corpus_path = [""]
-$bot_username = ""
+config = YAML.load(File.read("config.yml"))
+$instance_url = config["INSTANCE_URL"]
+$bearer_token = config["BEARER_TOKEN"]
+$corpus_path = config["CORPUS_FILES"]
+$bot_username = config["BOT_USERNAME"]
+$reply_length_limit = config["REPLY_LENGTH"]
+
+$software = 0
+$software_string = ""
+$allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
+
+$mentions_counter = {}
+$mentions_counter_timer = {}
 $seen_status = {}
 $last_id_tl = ""
-$api = nil
+
 $model = nil
 $top20 = nil
 $top100 = nil
-$software = 0
-$software_string = ""
-$mentions_counter = {}
-$mentions_counter_timer = {}
-$allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
-$reply_length_limit = 300
+
 $username_remote_regex = %r{([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*)[@＠][-a-zA-Z0-9@:%._+\~#=]{2,256}\.[a-z]{2,63}\b(?:[-a-zA-Z0-9@:%\_+.~#?&/=]*))}
 $username_local_regex = %r{(?:\s|^.?|[^\p{L}0-9_＠!@#$%&/*]|\s[^\p{L}0-9_＠!@#$%&*])([@＠][A-Za-z0-9_](?:[A-Za-z0-9_\.]+[A-Za-z0-9_]+|[A-Za-z0-9_]*))(?=[^A-Za-z0-9_@＠]|$)}
 
@@ -53,6 +58,7 @@ def log(*args)
   $stdout.print "@#{$bot_username}: " + args.map(&:to_s).join(" ") + "\n"
   $stdout.flush
 end
+
 
 def reply
   case $software
