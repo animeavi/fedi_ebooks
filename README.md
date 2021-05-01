@@ -36,7 +36,12 @@ Just follow the steps to authenticate, at the end, it will create a JSON file in
 
 Edit **config.yml** again and modify `CORPUS_FILES` to add the path to your corpus file, this value is a list and can have multiple corpus files (if you wish), like
 
-`CORPUS_FILES: ['corpus.json', 'corpus.txt', 'twitter_corpus.json']`
+```
+CORPUS_FILES:
+- corpus.json
+- corpus.txt
+- twitter_corpus.json
+```
 
 ## Installing Ruby dependencies
 
