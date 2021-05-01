@@ -65,7 +65,15 @@ puts "\nGenerating bearer token for your bot account..."
 params = { client_id: client_id,
            client_secret: client_secret,
            redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
-           grant_type: "client_credentials" }
+           grant_type: "password" }
+
+print "Account's email: "
+temp = gets.chomp
+params["username"] = temp
+
+print "Account's password: "
+temp = gets.chomp
+params["password"] = temp
 
 uri = URI("#{instance_url}/oauth/token")
 res = Net::HTTP.post_form(uri, params)
@@ -73,7 +81,7 @@ res = Net::HTTP.post_form(uri, params)
 data = JSON.parse(res.body)
 bearer_token = data["access_token"]
 
-puts "Your Bearer Token has been generate successfully!"
+puts "\nYour Bearer Token has been generate successfully!"
 puts "Your Bearer Token is: #{bearer_token}}"
 
 print "Save it to #{yml_config}? (y/n) [default: YES]: "
