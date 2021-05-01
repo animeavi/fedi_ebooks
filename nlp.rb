@@ -20,19 +20,19 @@ class NLP
   # Stopwords are common words that should often be ignored
   # @return [Array<String>]
   def self.stopwords
-    @stopwords ||= File.exists?("stopwords.txt") ? File.read("stopwords.txt").split : []
+    @stopwords ||= File.exists?("data/stopwords.txt") ? File.read("data/stopwords.txt").split : []
   end
 
   # Lazily loads an array of known English nouns
   # @return [Array<String>]
   def self.nouns
-    @nouns ||= File.read("nouns.txt").split
+    @nouns ||= File.read("data/nouns.txt").split
   end
 
   # Lazily loads an array of known English adjectives
   # @return [Array<String>]
   def self.adjectives
-    @adjectives ||= File.read("adjectives.txt").split
+    @adjectives ||= File.read("data/adjectives.txt").split
   end
 
   # Lazily load part-of-speech tagging library
