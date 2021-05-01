@@ -1,3 +1,4 @@
+require 'io/console'
 require 'json'
 require 'uri'
 require 'net/http'
@@ -58,8 +59,8 @@ client_id = data["client_id"]
 client_secret = data["client_secret"]
 
 puts "Your app has been created successfully!"
-puts "Your Client ID is: #{client_id}}"
-puts "Your Client secret is: #{client_secret}}"
+puts "Your Client ID is: #{client_id}"
+puts "Your Client secret is: #{client_secret}"
 puts "\nGenerating bearer token for your bot account..."
 
 params = { client_id: client_id,
@@ -71,8 +72,8 @@ print "Account's email: "
 temp = gets.chomp
 params["username"] = temp
 
-print "Account's password: "
-temp = gets.chomp
+print "Account's password (won't be visible): "
+temp = STDIN.noecho(&:gets).chomp
 params["password"] = temp
 
 uri = URI("#{instance_url}/oauth/token")
@@ -82,7 +83,7 @@ data = JSON.parse(res.body)
 bearer_token = data["access_token"]
 
 puts "\nYour Bearer Token has been generate successfully!"
-puts "Your Bearer Token is: #{bearer_token}}"
+puts "Your Bearer Token is: #{bearer_token}"
 
 print "Save it to #{yml_config}? (y/n) [default: YES]: "
 temp = gets.chomp
