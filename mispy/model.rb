@@ -4,6 +4,7 @@
 require "digest/md5"
 require "csv"
 require "set"
+require 'uri'
 require 'yajl/json_gem'
 require_relative "nlp"
 require_relative "suffix"
@@ -22,6 +23,10 @@ class Model
   # @return [Array<String>]
   # The top 200 most important keywords, in descending order
   attr_accessor :keywords
+
+  # For Pleroma
+  LINEBREAK_PLACEHOLDER = "&_#_1_0_;"
+  HTML_LINEBREAK = "&#10;"
 
   # Generate a new model from a corpus file
   # @param path [String]
@@ -133,8 +138,22 @@ class Model
 
     if path.split(".")[-1] == "json"
       log "Reading json corpus from #{path}"
-      lines = JSON.parse(content).map do |tweet|
-        tweet["text"]
+      json_content = JSON.parse(content)
+      twitter_json = json_content.include?("retweeted")
+
+      if twitter_json
+        lines = json_content.map do |tweet|
+          tweet["text"]
+        end
+      else
+        statuses = json_content['statuses'] unless !json_content.include?("statuses")
+        statuses = json_content if !json_content.include?("statuses")
+
+        lines = statuses.map do |status|
+          pleroma_cleanup(status)
+        end
+
+        lines.compact! # Remove nil values
       end
     elsif path.split(".")[-1] == "csv"
       log "Reading CSV corpus from #{path}"
@@ -186,9 +205,24 @@ class Model
 
       if path.split(".")[-1] == "json"
         log "Reading json corpus from #{path}"
-        l = JSON.parse(content).map do |tweet|
-          tweet["text"]
+        json_content = JSON.parse(content)
+        twitter_json = json_content.include?("retweeted")
+
+        if twitter_json
+          l = json_content.map do |tweet|
+            tweet["text"]
+          end
+        else
+          statuses = json_content['statuses'] unless !json_content.include?("statuses")
+          statuses = json_content if !json_content.include?("statuses")
+
+          l = statuses.map do |status|
+            pleroma_cleanup(status)
+          end
+
+          l.compact! # Remove nil values
         end
+
         lines.concat(l)
       elsif path.split(".")[-1] == "csv"
         log "Reading CSV corpus from #{path}"
@@ -310,5 +344,77 @@ class Model
     else
       make_statement(limit)
     end
+  end
+
+  def pleroma_cleanup(status, html_linebreaks: false)
+    return nil if !status['reblog'].nil?
+
+    content = status['content']
+
+    # Try to remove line breaks at the start of the post
+    10.times do
+      content = content.strip.gsub(/^<p>/, "") || content
+      content = content.strip.gsub(/^<br\/>/, "") || content
+    end
+
+    content = content.gsub("<br/>", " ") unless html_linebreaks
+    content = content.gsub("<p>", " ") unless html_linebreaks
+    content = content.gsub("<br/>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
+    content = content.gsub("<p>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
+    content = content.gsub(/<("[^"]*"|'[^']*'|[^'">])*>/, '') # Remove HTML
+    content = NLP.htmlentities.decode content.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
+
+    return nil if content.nil?
+
+    mentions = status['mentions']
+    mentions.each do |m|
+      content = content.gsub("@" + m['acct'], '') || content
+      content = content.gsub("@" + m['username'], '') || content
+      content = pleroma_filter(content)
+    end
+
+    content = pleroma_filter(content)
+
+    if html_linebreaks
+      # Try to remove line breaks at the start of the post (again)
+      10.times do
+        content = content.strip.gsub(/^#{LINEBREAK_PLACEHOLDER}/, "") || content
+      end
+
+      content = content.gsub(LINEBREAK_PLACEHOLDER, HTML_LINEBREAK)
+
+      while content.end_with? HTML_LINEBREAK
+        if content == HTML_LINEBREAK
+          content = ""
+          break
+        end
+
+        content = content.slice(content.rindex(HTML_LINEBREAK), HTML_LINEBREAK.size)
+        content = content.strip
+      end
+
+      while content.start_with? HTML_LINEBREAK
+        content = content.sub(HTML_LINEBREAK, "")
+        content = content.strip
+      end
+    end
+
+    if content != ""
+      return content
+    else
+      return nil
+    end
+  end
+
+  def pleroma_filter(content)
+    content = content.gsub(/\B[@]\S+\b/, '') || content
+
+    urls = URI.extract(content, ['http', 'https'])
+    urls.each do |url|
+      content = content.gsub(url, '')
+    end
+
+    content = content.squeeze(" ") || content
+    content.strip
   end
 end

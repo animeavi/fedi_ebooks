@@ -17,8 +17,8 @@ archive = File.open(ARGV[0], "r:UTF-8", &:read)
 
 
 data = JSON.parse(archive)
-statuses = data['statuses'] unless data['statuses'].nil?
-statuses = data if data['statuses'].nil?
+statuses = data['statuses'] unless !data.include?("statuses")
+statuses = data if !data.include?("statuses")
 
 corpus = File.new(outfile, "w:UTF-8")
 
