@@ -1,10 +1,10 @@
 # encoding: utf-8
 # rubocop:disable Style/StringLiterals
 
-require "json"
-require "set"
 require "digest/md5"
 require "csv"
+require "set"
+require 'yajl/json_gem'
 require_relative "nlp"
 require_relative "suffix"
 

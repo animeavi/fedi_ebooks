@@ -8,4 +8,5 @@ gem 'http'
 gem 'httparty'
 gem 'multipart-post'
 gem 'rufus-scheduler'
+gem 'yajl-ruby', require: 'yajl'
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]

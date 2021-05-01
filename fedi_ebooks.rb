@@ -5,9 +5,9 @@
 require "http"
 require "http/request"
 require "httparty"
-require "json"
 require "net/http/post/multipart"
 require "rufus-scheduler"
+require 'yajl/json_gem'
 require 'yaml'
 require_relative "mispy/model"
 require_relative "mispy/nlp"
