@@ -4,7 +4,7 @@ This allows you to run a bot in the fediverse that can reply to posts, make sche
 I wanted something that used [mispy's twitter_ebooks](https://github.com/mispy/twitter_ebooks) Markov algorithm, as I liked the results, so I built something around it.
 
 
-## How to use
+# How to use
 
 You need to create an app, and a bearer token for your bot, for your instance, you can Google how to do that for now, I may add a small script to help with that in the future if I feel like it.
 
