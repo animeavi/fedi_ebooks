@@ -13,7 +13,8 @@ corpus = File.new("corpus.txt", "w:UTF-8")
 # Enable if you want the archive to have HTML line breaks
 # You do have to make the bot post with HTML (only Pleroma supports it?)
 html_linebreaks = false
-LINEBREAK_PLACEHOLDER = "____LLLLINNEE___BBBBREAKER____" # lol
+LINEBREAK_PLACEHOLDER = "&_#_1_0_;"
+HTML_LINEBREAK = "&#10;"
 
 def filter(content)
   content = content.gsub(/\B[@]\S+\b/, '') || content
@@ -60,21 +61,20 @@ statuses.each do |s|
         content = content.strip.gsub(/^#{LINEBREAK_PLACEHOLDER}/, "") || content
       end
 
-      content = content.gsub("#{LINEBREAK_PLACEHOLDER}", "&#10;")
+      content = content.gsub(LINEBREAK_PLACEHOLDER, HTML_LINEBREAK)
 
-      r = "&#10;"
-      while content.end_with? r
-        if content == r
+      while content.end_with? HTML_LINEBREAK
+        if content == HTML_LINEBREAK
           content = ""
           break
         end
 
-        content = content.slice(content.rindex(r), r.size)
+        content = content.slice(content.rindex(HTML_LINEBREAK), HTML_LINEBREAK.size)
         content = content.strip
       end
 
-      while content.start_with? r
-        content = content.sub(r, '')
+      while content.start_with? HTML_LINEBREAK
+        content = content.sub(HTML_LINEBREAK, "")
         content = content.strip
       end
     end
