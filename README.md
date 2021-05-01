@@ -6,17 +6,16 @@ I wanted something that used [mispy's twitter_ebooks](https://github.com/mispy/t
 
 # How to use
 
-You need to create an app, and a bearer token for your bot, for your instance, you can Google how to do that for now, I may add a small script to help with that in the future if I feel like it.
-
-With you bearer token in hand, you can edit the following lines in **config.yml**
+You need to create an app, and generate a bearer token for your bot, we have a script for that, but first you need to edit the following values in **config.yml**
 
 * `INSTANCE_URL`
-* `BEARER_TOKEN`
 * `BOT_USERNAME`
 
-The first is your instance's url, the second is the bearer token you generated, and the third one is your bot's username. We will pull the last one from the API, so if you can leave it as is if you want.
+## Generating your bearer token
 
-You will need a corpus file or files, which will be the source of the bot's posts.
+Included in the root of this repository is **auth_helper.rb**, you can use it to generate a bearer token for your bot and have the option to add it **config.yml**, if you wish. Just run **auth_helper.rb** and follow the interactive prompts.
+
+Next you will need a corpus file or files, which will be the source of the bot's posts.
 
 ## Corpus file(s)
 
