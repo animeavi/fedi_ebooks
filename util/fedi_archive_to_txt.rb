@@ -6,7 +6,8 @@ require 'uri'
 
 archive = File.open("archive.json", "r:UTF-8", &:read)
 data = JSON.parse(archive)
-statuses = data['statuses']
+statuses = data['statuses'] unless data['statuses'].nil?
+statuses = data if data['statuses'].nil?
 
 corpus = File.new("corpus.txt", "w:UTF-8")
 
