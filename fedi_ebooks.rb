@@ -9,8 +9,8 @@ require "json"
 require "net/http/post/multipart"
 require "rufus-scheduler"
 require 'yaml'
-require_relative "model"
-require_relative "nlp"
+require_relative "mispy/model"
+require_relative "mispy/nlp"
 
 config = YAML.load(File.read("config.yml"))
 $instance_url = config["INSTANCE_URL"]

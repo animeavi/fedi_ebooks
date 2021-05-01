@@ -4,7 +4,8 @@ require 'uri'
 
 if ARGV.length != 1 and ARGV.length != 2
   puts "Usage: ruby #{$0} <input_json> [output_txt]"
-  puts "Default output file name will be 'corpus.txt'"
+  puts "  Default output file name will be 'corpus.txt'"
+  puts ""
   exit 1
 end
 
