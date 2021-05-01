@@ -295,11 +295,12 @@ def upload_media_misskey(path)
   JSON.parse(response.body.to_s)["id"]
 end
 
-def get_extra_mentions(mentions)
+def get_extra_mentions(mentions, account)
   extra_mentions = ""
 
   mentions.each do |m|
     next if m["acct"].downcase == $bot_username.downcase
+    next if m["acct"].downcase == account.downcase
 
     extra_mentions = "#{extra_mentions}@#{m["acct"]} "
   end
@@ -314,6 +315,7 @@ def get_mentions_sorted(mentions, account)
 
   mentions.each do |m|
     next if m["acct"].downcase == $bot_username.downcase
+    next if m["acct"].downcase == account.downcase
 
     menchies.push(m["acct"])
   end
@@ -328,7 +330,7 @@ end
 
 def handle_extra_mentions(mentions, account)
   # Remove extra mentions to not spam people after being in the same mention chain 5 times
-  extra_mentions = get_extra_mentions(mentions)
+  extra_mentions = get_extra_mentions(mentions, account)
   if extra_mentions != ""
     sorted_mentions = get_mentions_sorted(mentions, account)
     if !$mentions_counter[sorted_mentions].nil?
