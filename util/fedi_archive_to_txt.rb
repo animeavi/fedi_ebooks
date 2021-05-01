@@ -2,14 +2,24 @@ require 'htmlentities'
 require 'json'
 require 'uri'
 
+if ARGV.length != 1 and ARGV.length != 2
+  puts "Usage: ruby #{$0} <input_json> [output_txt]"
+  puts "Default output file name will be 'corpus.txt'"
+  exit 1
+end
+
+outfile = (ARGV[1].nil?) ? "corpus.txt" : ARGV[1]
+
 # You can get the JSON using something like https://pypi.org/project/mastodon-archive/
 
-archive = File.open("archive.json", "r:UTF-8", &:read)
+archive = File.open(ARGV[0], "r:UTF-8", &:read)
+
+
 data = JSON.parse(archive)
 statuses = data['statuses'] unless data['statuses'].nil?
 statuses = data if data['statuses'].nil?
 
-corpus = File.new("corpus.txt", "w:UTF-8")
+corpus = File.new(outfile, "w:UTF-8")
 
 # Enable if you want the archive to have HTML line breaks
 # You do have to make the bot post with HTML (only Pleroma supports it?)
