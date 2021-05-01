@@ -30,7 +30,7 @@ For Mastodon/Pleroma there's a tool called [mastodon-archive](https://pypi.org/p
 
 After installed you can archive your posts with the following command
 
-```mastodon-archive archive --no-favourites username@instance.url```
+`mastodon-archive archive --no-favourites username@instance.url`
 
 Just follow the steps to authenticate, at the end, it will create a JSON file in the current directory, you can also run this command again to update that file.
 
@@ -61,6 +61,6 @@ Make sure you have Ruby and the Bundler gem (`gem install bundler`) installed.
 
 Just `cd` into the project's directory and run
 
-`bundle exec ruby fedi_ebooks.rb`.
+`bundle exec ruby fedi_ebooks.rb`
 
 This is fine in some cases, but I recommend creating a service for the bot so it can be restarted automatically and run on boot.
