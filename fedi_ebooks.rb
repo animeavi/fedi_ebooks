@@ -492,7 +492,7 @@ scheduler.every "1h" do
   create_status(status)
 end
 
-scheduler.every "15s" do
+scheduler.every "30s" do
   reply
 
   # Comment this out if you want timeline replies
