@@ -94,6 +94,12 @@ def reply_mastodon
     mentions = n["status"]["mentions"]
     notif_id = n["id"]
 
+    # You're not funny
+    if mentions.size > 8
+      delete_notification(notif_id)
+      next
+    end
+
     # Don't reply to other bots
     if n["account"]["bot"]
       delete_notification(notif_id)
