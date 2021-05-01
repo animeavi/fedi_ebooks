@@ -42,7 +42,7 @@ Inside of the **util** directory there's a **fedi_archive_to_txt.rb** script tha
 
 To use it run the following command (from the main project directory)
 
-`ruby util\fedi_archive_to_txt.rb YOUR_JSON_FILE OUTPUT_TXT_FILE`
+`ruby util/fedi_archive_to_txt.rb YOUR_JSON_FILE OUTPUT_TXT_FILE`
 
 The output TXT argument is optional, if you don't use it, it will be saved to **corpus.txt**, now you have a file that can be used for your bot.
 
