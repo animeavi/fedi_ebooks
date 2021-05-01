@@ -62,8 +62,9 @@ class NLP
   # @param text [String]
   # @return [String]
   def self.normalize(text)
+    text.gsub("&#10;", "&_#_1_0_;")
     htmlentities.decode text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
-    text.gsub("\n", "&#10;")
+    text.gsub("&_#_1_0_;", "&#10;")
   end
 
   # Split text into sentences
