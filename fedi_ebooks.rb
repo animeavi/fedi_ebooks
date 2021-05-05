@@ -7,8 +7,8 @@ require "http/request"
 require "httparty"
 require "net/http/post/multipart"
 require "rufus-scheduler"
-require 'yajl/json_gem'
-require 'yaml'
+require "yajl/json_gem"
+require "yaml"
 require_relative "mispy/model"
 require_relative "mispy/nlp"
 
@@ -166,7 +166,7 @@ def reply_timeline_mastodon
   i = 0
   tl.each do |t|
     if i == 0
-      $last_id_tl = t['id']
+      $last_id_tl = t["id"]
       i = 1
     end
 

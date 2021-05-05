@@ -1,8 +1,8 @@
-require 'io/console'
-require 'json'
-require 'uri'
-require 'net/http'
-require 'yaml'
+require "io/console"
+require "json"
+require "net/http"
+require "uri"
+require "yaml"
 
 yml_config = "config.yml"
 config = YAML.load(File.read(yml_config))
@@ -26,7 +26,7 @@ if instance_url != config["INSTANCE_URL"]
   
   if yes_no_choice(temp)
     config["INSTANCE_URL"] = instance_url
-    File.open(yml_config, 'w') { |f| YAML.dump(config, f) }
+    File.open(yml_config, "w") { |f| YAML.dump(config, f) }
     print "\n"
   end
 end
@@ -41,7 +41,7 @@ if bot_username != config["BOT_USERNAME"]
   
   if yes_no_choice(temp)
     config["BOT_USERNAME"] = bot_username
-    File.open(yml_config, 'w') { |f| YAML.dump(config, f) }
+    File.open(yml_config, "w") { |f| YAML.dump(config, f) }
   end
 end
 
@@ -92,7 +92,7 @@ save_cfg = yes_no_choice(temp)
 if save_cfg
   puts "Updating #{yml_config} with the generated Bearer Token..."
   config["BEARER_TOKEN"] = bearer_token
-  File.open(yml_config, 'w') { |f| YAML.dump(config, f) }
+  File.open(yml_config, "w") { |f| YAML.dump(config, f) }
 end
 
 puts "\nDone!"

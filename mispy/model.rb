@@ -4,8 +4,8 @@
 require "digest/md5"
 require "csv"
 require "set"
-require 'uri'
-require 'yajl/json_gem'
+require "uri"
+require "yajl/json_gem"
 require_relative "nlp"
 require_relative "suffix"
 
