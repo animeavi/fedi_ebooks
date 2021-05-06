@@ -370,6 +370,7 @@ end
 def get_status_mentionless(status_text, mentions)
   mentions.each do |m|
     status_text = status_text.gsub("@#{m["acct"]}", "")
+    status_text = status_text.gsub("@#{m["username"]}", "")
   end
 
   status_text.strip
