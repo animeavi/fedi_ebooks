@@ -357,6 +357,7 @@ class Model
       content = content.strip.gsub(/^<br\/>/, "") || content
     end
 
+    content = content.gsub(/<a.*?<\/a>/, "")
     content = content.gsub("<br/>", " ") unless html_linebreaks
     content = content.gsub("<p>", " ") unless html_linebreaks
     content = content.gsub("<br/>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
