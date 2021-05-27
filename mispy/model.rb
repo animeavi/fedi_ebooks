@@ -139,7 +139,7 @@ class Model
     if path.split(".")[-1] == "json"
       log "Reading json corpus from #{path}"
       json_content = JSON.parse(content)
-      twitter_json = json_content.include?("retweeted")
+      twitter_json = content.include?("\"retweeted\"")
 
       if twitter_json
         lines = json_content.map do |tweet|
@@ -206,7 +206,7 @@ class Model
       if path.split(".")[-1] == "json"
         log "Reading json corpus from #{path}"
         json_content = JSON.parse(content)
-        twitter_json = json_content.include?("retweeted")
+        twitter_json = content.include?("\"retweeted\"")
 
         if twitter_json
           l = json_content.map do |tweet|
