@@ -220,8 +220,8 @@ def reply_timeline_mastodon
 end
 
 def reply_misskey
-  log "reply_misskey: TODO"
-  return
+  log "Misskey support not implemented!"
+  exit 1
 
   notifs = get_mentions_notifications
 
@@ -243,7 +243,8 @@ def reply_misskey
 end
 
 def reply_timeline_misskey
-  log "reply_timeline_misskey: TODO"
+  log "Misskey support not implemented!"
+  exit 1
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
