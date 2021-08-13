@@ -33,7 +33,8 @@ After installed you can archive your posts with the following command
 
 Just follow the steps to authenticate, at the end, it will create a JSON file in the current directory, you can also run this command again to update that file. This JSON file can be used as your corpus file to generate the model file.
 
-I have a [modified version of mastodon-archive](https://github.com/animeavi/mastodon-backup) that can pull archive from uses other than the authed user (you can auth from any instance, but you only get the posts that federated to that instance), figure out how to install it though lole.
+I have a [modified version of mastodon-archive](https://github.com/animeavi/mastodon-backup) that can pull the archive from uses other than the authed user (you can auth from any instance, but you only get the posts that federated to that instance), figure out how to install it though lole.
+
 `mastodon-archive archive --no-favourites --id target-username@instance.url username@instance.url`
 
 Edit **config.yml** again and modify `CORPUS_FILES` to add the path to your corpus file, this value is a list and can have multiple corpus files (if you wish), like
