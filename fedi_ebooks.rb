@@ -478,6 +478,11 @@ def init
     exit 1
   end
 
+  if $bot_username.nil?
+    log "Unable to get the account's username! Check your credentials!"
+    exit 1
+  end
+
   model_path = "#{$bot_username}.model"
 
   Model.consume_all($corpus_path).save(model_path) unless File.file?(model_path)
