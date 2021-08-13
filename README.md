@@ -27,7 +27,7 @@ The model code will currently accept everything **twitter_ebooks** did: Twitter 
 
 For Mastodon/Pleroma there's a tool called [mastodon-archive](https://pypi.org/project/mastodon-archive/) for Python, it can be installed with **pip**.
 
-After installed you can archive your posts with the following command
+After installed you can archive your posts with the following command (warning: this will pull Direct Message posts too, use my fork below if you want to avoid that)
 
 `mastodon-archive archive --no-favourites username@instance.url`
 
