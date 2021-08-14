@@ -5,3 +5,5 @@ CORPUS_FILES:
 - corpus.txt
 BOT_USERNAME: bender
 REPLY_LENGTH: 300
+BOT_BLACKLIST:
+- Notch@minecraft.net

@@ -18,6 +18,7 @@ $bearer_token = config["BEARER_TOKEN"]
 $corpus_path = config["CORPUS_FILES"]
 $bot_username = config["BOT_USERNAME"]
 $reply_length_limit = config["REPLY_LENGTH"]
+$bot_blacklist = config["BOT_BLACKLIST"] ? config["BOT_BLACKLIST"].map(&:downcase) : []
 
 $software = 0
 $software_string = ""
@@ -101,7 +102,7 @@ def reply_mastodon
     end
 
     # Don't reply to other bots
-    if n["account"]["bot"]
+    if n["account"]["bot"] || $bot_blacklist.include?(account.downcase) || account.include?("botsin.space")
       delete_notification(notif_id)
       next
     end
@@ -177,6 +178,8 @@ def reply_timeline_mastodon
 
     next if $seen_status[status_id]
     next if t["account"]["bot"]
+    next if $bot_blacklist.include?(account.downcase)
+    next if account.include?("botsin.space")
     next if account.downcase == $bot_username.downcase
     next if is_reblog
 
@@ -238,7 +241,7 @@ def reply_misskey
     next if n["isRead"]
 
     # Don't reply to other bots
-    next if n["user"]["isBot"]
+    next if n["user"]["isBot"] || $bot_blacklist.include?(account.downcase) || account.include?("botsin.space")
   end
 end
 
