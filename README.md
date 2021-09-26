@@ -60,3 +60,37 @@ Just `cd` into the project's directory and run
 
 This is fine in some cases, but I recommend creating a service for the bot so it can be restarted automatically and run on boot.
 Also, it is recommended to run the bot once to generate the .model file and then restart, to decrease memory usage that is experienced when generating it.
+
+## Creating a service (systemd)
+
+I've included an example service file for systemd called `example.service`, but you’ll have to edit some of this stuff to match your system.
+
+First install GNU Screen: 
+`sudo apt install screen` (Debian/Ubuntu)
+`sudo pacman -S screen` (Arch)
+
+Create the service file (you may not have nano installed by default, eg: Arch, install it)
+`sudo nano /etc/systemd/system/fediebooks.service`
+Paste the contents of the example file here.
+
+Where it says `User=`, edit with your Linux username.
+
+Edit everywhere that says `/path/to/your/bot/files` to the folder where your bot files are.
+
+Edit `/home/user/.gem/ruby/3.0.0/bin/bundler` to what the command `which bundler` gives you
+
+Edit `/usr/bin/ruby` to what the command `which ruby` gives you (should match most systems already)
+
+Save the file (CTRL+S).
+
+Run
+```
+sudo systemctl enable fediebooks
+sudo systemctl start fediebooks
+
+```
+
+Now the service should be running and start automatically on boot.
+
+To check on the bot's console output while it's running: `screen -r fediebooks`
+To leave without killing the screen hold CTRL then press A, D.

@@ -1,0 +1,17 @@
+[Unit]
+Description=fediebooks
+Wants=network-online.target
+After=network-online.target
+ 
+[Service]
+Type=simple
+User=YOUR_USER_HERE
+Restart=always
+RestartSec=3
+ExecStart=
+ExecStart=/usr/bin/screen -L -DmS fediebooks /home/user/.gem/ruby/3.0.0/bin/bundler exec /usr/bin/ruby /path/to/your/bot/files/fedi_ebooks.rb
+WorkingDirectory=/path/to/your/bot/files
+ 
+[Install]
+WantedBy=multi-user.target
+ 
