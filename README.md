@@ -65,12 +65,17 @@ Also, it is recommended to run the bot once to generate the .model file and then
 
 I've included an example service file for systemd called `example.service`, but you’ll have to edit some of this stuff to match your system.
 
-First install GNU Screen: 
+
+First install GNU Screen:
+
 `sudo apt install screen` (Debian/Ubuntu)
-`sudo pacman -S screen` (Arch)
+
+`sudo pacman -S screen` (Arch) 
 
 Create the service file (you may not have nano installed by default, eg: Arch, install it)
+
 `sudo nano /etc/systemd/system/fediebooks.service`
+
 Paste the contents of the example file here.
 
 Where it says `User=`, edit with your Linux username.
@@ -87,10 +92,10 @@ Run
 ```
 sudo systemctl enable fediebooks
 sudo systemctl start fediebooks
-
 ```
 
 Now the service should be running and start automatically on boot.
 
 To check on the bot's console output while it's running: `screen -r fediebooks`
+
 To leave without killing the screen hold CTRL then press A, D.
