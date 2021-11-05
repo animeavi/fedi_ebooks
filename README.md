@@ -59,7 +59,8 @@ Just `cd` into the project's directory and run
 `bundle exec ruby fedi_ebooks.rb`
 
 This is fine in some cases, but I recommend creating a service for the bot so it can be restarted automatically and run on boot.
-Also, it is recommended to run the bot once to generate the .model file and then restart, to decrease memory usage that is experienced when generating it.
+Also, it is recommended to run the bot once to generate the .model file and then restart, to decrease memory usage that is experienced when generating it. Depending on the size of the corpus file, you may want to have a swap file on your server or generate the .model on your desktop/laptop before uploading it to the server, as it may use a lot of memory for this process, but you only need to do this once and whenever you update the archive.
+
 
 ## Creating a service (systemd)
 
