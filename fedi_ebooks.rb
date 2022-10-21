@@ -24,6 +24,9 @@ $software = 0
 $software_string = ""
 $allowed_content_types = %w[text/plain text/html text/markdown text/bbcode]
 
+$accounts_mentioning = {}
+$accounts_mentioning_stored_time = nil
+
 $mentions_counter = {}
 $mentions_counter_timer = {}
 $seen_status = {}
@@ -142,6 +145,12 @@ def reply_mastodon
     end
 
     unless mentions_bot
+      delete_notification(notif_id)
+      next
+    end
+
+    if detect_infinite_loop(account)
+      log "Infinite loop detected from @#{account}!"
       delete_notification(notif_id)
       next
     end
@@ -378,6 +387,27 @@ def get_status_mentionless(status_text, mentions)
   end
 
   status_text.strip
+end
+
+def detect_infinite_loop(account)
+  if $accounts_mentioning_stored_time.nil?
+    $accounts_mentioning_stored_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    return false
+  elseif (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $accounts_mentioning_stored_time) >= 300
+    # Reset after 5 minutes
+    $accounts_mentioning_stored_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    $accounts_mentioning = {}
+  end
+
+  if !$accounts_mentioning[account].nil?
+    # If we detect 10 or more posts in 5 minutes we assume it's an infinite loop (another bot)
+    return true if $accounts_mentioning[account] >= 10
+    $accounts_mentioning[account] = $accounts_mentioning[account] + 1
+  else
+    $accounts_mentioning[account] = 1
+  end
+
+  return false
 end
 
 def generate_reply(status_text, limit = $reply_length_limit)
