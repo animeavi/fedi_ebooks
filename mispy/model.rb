@@ -350,6 +350,7 @@ class Model
     return nil if !status['reblog'].nil?
 
     content = status['content']
+    return nil if content.nil?
 
     # Try to remove line breaks at the start of the post
     10.times do
