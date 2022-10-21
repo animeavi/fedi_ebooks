@@ -172,6 +172,7 @@ end
 def reply_timeline_mastodon
   headers = {"Content-Type": "application/json", "Authorization": "Bearer #{$bearer_token}"}
   tl = HTTParty.get("#{$instance_url}/api/v1/timelines/home?since_id=#{$last_id_tl}", headers: headers)
+  return if tl.key?("errors")
 
   i = 0
   tl.each do |t|
