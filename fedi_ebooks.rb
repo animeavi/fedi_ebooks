@@ -292,6 +292,34 @@ def create_status_misskey(resp, status_id: nil, media_ids: [])
   exit 1
 end
 
+def get_id_from_username(account)
+  headers = {"Content-Type": "application/json",
+             "Authorization": "Bearer #{$bearer_token}"}
+
+  req_url = $instance_url + "/api/v1/accounts/#{account}"
+  resp = JSON.parse(HTTParty.get(req_url, headers: headers).to_s)
+
+  resp["id"]
+end
+
+def follow_account(account)
+  headers = {"Content-Type": "application/json",
+             "Authorization": "Bearer #{$bearer_token}"}
+
+  account = get_id_from_username(account)
+  req_url = $instance_url + "/api/v1/accounts/#{account}/follow"
+  HTTParty.post(req_url, headers: headers)
+end
+
+def unfollow_account(account)
+  headers = {"Content-Type": "application/json",
+             "Authorization": "Bearer #{$bearer_token}"}
+
+  account = get_id_from_username(account)
+  req_url = $instance_url + "/api/v1/accounts/#{account}/unfollow"
+  HTTParty.post(req_url, headers: headers)
+end
+
 # Shamelessly copied from mastodon-api
 def upload_media(path)
   headers = {"Authorization": "Bearer #{$bearer_token}"}
