@@ -13,6 +13,7 @@ require_relative "nlp"
 require_relative "suffix"
 
 class Model
+  # Database classes
   class Tokens < ActiveRecord::Base
   end
 
@@ -111,40 +112,14 @@ class Model
     exit 0
   end
 
-  # Append a generated model to existing model file instead of overwriting it
-  # @param path [String]
-  def append(path)
-    existing = File.file?(path)
-    if !existing
-      log "No existing model found at #{path}"
-      return
-    else
-      # read-in and deserialize existing model
-      props = Marshal.load(File.open(path, "rb") { |old| old.read })
-      old_tokens = props[:tokens]
-      old_sentences = props[:sentences]
-      old_keywords = props[:keywords]
-
-      # append existing properties to new ones and overwrite with new model
-      File.open(path, "wb") do |f|
-        f.write(Marshal.dump({
-                               tokens: @tokens.concat(old_tokens),
-                               sentences: @sentences.concat(old_sentences),
-                               keywords: @keywords.concat(old_keywords)
-                             }))
-      end
-    end
-    self
-  end
-
   def initialize
+    ActiveRecord::Base.logger = Logger.new(STDERR)
+    ActiveRecord::Base.logger.level = :error
+
     @tokens = []
 
     # Reverse lookup tiki by token, for faster generation
     @tikis = {}
-
-    ActiveRecord::Base.logger = Logger.new(STDERR)
-    ActiveRecord::Base.logger.level = :error
   end
 
   # Reverse lookup a token index from a token
@@ -392,6 +367,9 @@ class Model
     end
   end
 
+  # Cleans up the status for ActivityPub
+  # @param status [String]
+  # @param html_linebreaks [Boolean] try to replace line breaks with HTML ones
   def pleroma_cleanup(status, html_linebreaks: false)
     return nil if !status['reblog'].nil?
 
@@ -454,6 +432,8 @@ class Model
     end
   end
 
+  # Filter content for ActivityPub
+  # @param content [String]
   def pleroma_filter(content)
     content = content.gsub(/\B[@]\S+\b/, '') || content
 
