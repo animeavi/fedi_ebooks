@@ -546,14 +546,9 @@ def init
     exit 1
   end
 
-  model_path = "#{$bot_username}.model"
+  model_path = "#{$bot_username}.db"
 
   Model.consume_all($corpus_path).save(model_path) unless File.file?(model_path)
-
-  log "Loading model #{model_path}"
-  $model = Model.load(model_path)
-  $top20 = $model.keywords.take(20)
-  $top100 = $model.keywords.take(100)
 
   log "Connected to #{$instance_url} (#{$software_string})"
 end

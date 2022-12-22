@@ -1,6 +1,9 @@
 # encoding: utf-8
+
 # rubocop:disable Style/StringLiterals
 
+require "active_record"
+require "bulk_insert"
 require "digest/md5"
 require "csv"
 require "set"
@@ -10,6 +13,15 @@ require_relative "nlp"
 require_relative "suffix"
 
 class Model
+  class Tokens < ActiveRecord::Base
+  end
+
+  class Sentences < ActiveRecord::Base
+  end
+
+  class Keywords < ActiveRecord::Base
+  end
+
   # @return [Array<String>]
   # An array of unique tokens. This is the main source of actual strings
   # in the model. Manipulation of a token is done using its index
@@ -42,31 +54,61 @@ class Model
     Model.new.consume_all(paths)
   end
 
-  # Load a saved model
+  # Set ups the database connection
   # @param path [String]
-  # @return [Ebooks::Model]
-  def self.load(path)
-    model = Model.new
-    model.instance_eval do
-      props = Marshal.load(File.open(path, "rb") { |f| f.read })
-      @tokens = props[:tokens]
-      @sentences = props[:sentences]
-      @keywords = props[:keywords]
-    end
-    model
+  def setup_db(path)
+    ActiveRecord::Base.establish_connection(
+      :adapter => "sqlite3",
+      :database => "#{$bot_username}.db"
+    )
   end
 
-  # Save model to a file
+  # Creates the database for the model
+  # @param path [String]
+  def create_db(path)
+    setup_db(path)
+
+    ActiveRecord::Schema.define do
+      create_table :tokens, id: false, if_not_exists: true do |table|
+        table.column :token_id, :integer
+        table.column :token, :string
+      end
+
+      create_table :sentences, id: false, if_not_exists: true do |table|
+        table.column :sentence, :string
+      end
+
+      create_table :keywords, id: false, if_not_exists: true do |table|
+        table.column :keyword, :string
+      end
+    end
+  end
+
+  # Populates the database for the model
   # @param path [String]
   def save(path)
-    File.open(path, "wb") do |f|
-      f.write(Marshal.dump({
-        tokens: @tokens,
-        sentences: @sentences,
-        keywords: @keywords
-      }))
+    create_db(path)
+
+    Tokens.bulk_insert do |worker|
+      i = 0
+      @tokens.each do |d|
+        worker.add token_id: i, token: d
+        i += 1
+      end
     end
-    self
+
+    Sentences.bulk_insert do |worker|
+      # Attempting to make the numbers in the array searchable by a SQL statement
+      # It will look like this => |10|54|642|
+      @sentences.each { |d| worker.add sentence: "|" + d.join("|").to_s + "|" }
+    end
+
+    Keywords.bulk_insert do |worker|
+      @keywords.each { |d| worker.add keyword: d }
+    end
+
+    log "Database file created, run the software again."
+    exit 0
   end
 
   # Append a generated model to existing model file instead of overwriting it
@@ -77,19 +119,19 @@ class Model
       log "No existing model found at #{path}"
       return
     else
-      #read-in and deserialize existing model
+      # read-in and deserialize existing model
       props = Marshal.load(File.open(path, "rb") { |old| old.read })
       old_tokens = props[:tokens]
       old_sentences = props[:sentences]
       old_keywords = props[:keywords]
 
-      #append existing properties to new ones and overwrite with new model
+      # append existing properties to new ones and overwrite with new model
       File.open(path, "wb") do |f|
         f.write(Marshal.dump({
-          tokens: @tokens.concat(old_tokens),
-          sentences: @sentences.concat(old_sentences),
-          keywords: @keywords.concat(old_keywords)
-        }))
+                               tokens: @tokens.concat(old_tokens),
+                               sentences: @sentences.concat(old_sentences),
+                               keywords: @keywords.concat(old_keywords)
+                             }))
       end
     end
     self
@@ -100,6 +142,9 @@ class Model
 
     # Reverse lookup tiki by token, for faster generation
     @tikis = {}
+
+    ActiveRecord::Base.logger = Logger.new(STDERR)
+    ActiveRecord::Base.logger.level = :error
   end
 
   # Reverse lookup a token index from a token
@@ -179,6 +224,7 @@ class Model
     statements = []
     lines.each do |l|
       next if l.start_with?("#") # Remove commented lines
+
       statements << NLP.normalize(l)
     end
 
@@ -270,7 +316,7 @@ class Model
     tweet = ""
 
     while (tikis = generator.generate(3, :bigrams)) do
-      #log "Attempting to produce tweet try #{retries+1}/#{retry_limit}"
+      # log "Attempting to produce tweet try #{retries+1}/#{retry_limit}"
       break if (tikis.length > 3 || responding) && valid_tweet?(tikis, limit)
 
       retries += 1
@@ -278,7 +324,7 @@ class Model
     end
 
     if verbatim?(tikis) && tikis.length > 3 # We made a verbatim tweet by accident
-      #log "Attempting to produce unigram tweet try #{retries+1}/#{retry_limit}"
+      # log "Attempting to produce unigram tweet try #{retries+1}/#{retry_limit}"
       while (tikis = generator.generate(3, :unigrams)) do
         break if valid_tweet?(tikis, limit) && !verbatim?(tikis)
 
