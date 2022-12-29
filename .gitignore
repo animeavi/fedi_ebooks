@@ -1,2 +1,4 @@
+*.db
 /.idea/
-Gemfile.lock 
+corpus/
+Gemfile.lock
