@@ -507,6 +507,8 @@ class Model
     tikis
   end
 
+  # Generates the unigrams and bigrams for the full generator,
+  # then adds them to the database.
   def default_generator()
     @unigrams = {}
     @bigrams = {}
