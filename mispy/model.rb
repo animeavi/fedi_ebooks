@@ -4,13 +4,12 @@
 
 require "active_record"
 require "bulk_insert"
-require "digest/md5"
 require "csv"
+require "digest/md5"
 require "set"
 require "uri"
 require "yajl/json_gem"
 require_relative "nlp"
-require_relative "suffix"
 
 class Model
   # Database classes
@@ -22,6 +21,15 @@ class Model
 
   class Keywords < ActiveRecord::Base
   end
+
+  class Unigrams < ActiveRecord::Base
+  end
+
+  class Bigrams < ActiveRecord::Base
+  end
+
+  # Reply generation uses this
+  INTERIM = -1
 
   # @return [Array<String>]
   # An array of unique tokens. This is the main source of actual strings
@@ -58,6 +66,7 @@ class Model
   # Set ups the database connection
   # @param path [String]
   def setup_db(path)
+    ActiveRecord::Base.clear_active_connections!
     ActiveRecord::Base.establish_connection(
       :adapter => "sqlite3",
       :database => "#{$bot_username}.db"
@@ -82,6 +91,17 @@ class Model
       create_table :keywords, id: false, if_not_exists: true do |table|
         table.column :keyword, :string
       end
+
+      create_table :unigrams, id: false, if_not_exists: true do |table|
+        table.column :next_tiki, :integer
+        table.column :unigram, :string
+      end
+
+      create_table :bigrams, id: false, if_not_exists: true do |table|
+        table.column :next_tiki, :integer
+        table.column :tiki, :integer
+        table.column :bigram, :string
+      end
     end
   end
 
@@ -101,14 +121,18 @@ class Model
     Sentences.bulk_insert do |worker|
       # Attempting to make the numbers in the array searchable by a SQL statement
       # It will look like this => |10|54|642|
-      @sentences.each { |d| worker.add sentence: "|" + d.join("|").to_s + "|" }
+      @sentences.each { |d| worker.add sentence: "|" + d.join("|").to_s + "|" if !d.empty? }
     end
 
     Keywords.bulk_insert do |worker|
       @keywords.each { |d| worker.add keyword: d }
     end
 
+    # Geneate default Unigrams and Bigrams
+    default_generator()
+
     log "Database file created, run the software again."
+    ActiveRecord::Base.clear_active_connections!
     exit 0
   end
 
@@ -280,17 +304,14 @@ class Model
 
   # Generate some text
   # @param limit [Integer] available characters
-  # @param generator [SuffixGenerator, nil]
   # @param retry_limit [Integer] how many times to retry on invalid tweet
   # @return [String]
-  def make_statement(limit = 140, generator = nil, retry_limit = 10)
-    responding = !generator.nil?
-    generator ||= SuffixGenerator.build(@sentences)
-
+  def make_statement(limit = 140, relevant_sentences = nil, retry_limit = 10)
+    responding = !relevant_sentences.nil?
     retries = 0
     tweet = ""
 
-    while (tikis = generator.generate(3, :bigrams)) do
+    while (tikis = generate(3, :bigrams)) do
       # log "Attempting to produce tweet try #{retries+1}/#{retry_limit}"
       break if (tikis.length > 3 || responding) && valid_tweet?(tikis, limit)
 
@@ -300,7 +321,7 @@ class Model
 
     if verbatim?(tikis) && tikis.length > 3 # We made a verbatim tweet by accident
       # log "Attempting to produce unigram tweet try #{retries+1}/#{retry_limit}"
-      while (tikis = generator.generate(3, :unigrams)) do
+      while (tikis = generate(3, :unigrams)) do
         break if valid_tweet?(tikis, limit) && !verbatim?(tikis)
 
         retries += 1
@@ -357,11 +378,9 @@ class Model
     relevant, slightly_relevant = find_relevant(sentences, input)
 
     if relevant.length >= 3
-      generator = SuffixGenerator.build(relevant)
-      make_statement(limit, generator)
+      make_statement(limit, relevant)
     elsif slightly_relevant.length >= 5
-      generator = SuffixGenerator.build(slightly_relevant)
-      make_statement(limit, generator)
+      make_statement(limit, slightly_relevant)
     else
       make_statement(limit)
     end
@@ -444,5 +463,104 @@ class Model
 
     content = content.squeeze(" ") || content
     content.strip
+  end
+
+  # Generate a recombined sequence of tikis
+  # @param passes [Integer] number of times to recombine
+  # @param n [Symbol] :unigrams or :bigrams (affects how conservative the model is)
+  # @return [Array<Integer>]
+  def generate(passes = 5, n = :unigrams)
+    index = rand(@sentences.length)
+    tikis = @sentences[index]
+    used = [index] # Sentences we"ve already used
+    verbatim = [tikis] # Verbatim sentences to avoid reproducing
+
+    0.upto(passes - 1) do
+      varsites = {} # Map bigram start site => next tiki alternatives
+
+      tikis.each_with_index do |tiki, i|
+        next_tiki = tikis[i + 1]
+        break if next_tiki.nil?
+
+        alternatives = (n == :unigrams) ? @unigrams[next_tiki] : @bigrams[tiki][next_tiki]
+        # Filter out suffixes from previous sentences
+        alternatives.reject! { |a| a[1] == INTERIM || used.include?(a[0]) }
+        varsites[i] = alternatives unless alternatives.empty?
+      end
+
+      variant = nil
+      varsites.to_a.shuffle.each do |site|
+        start = site[0]
+
+        site[1].shuffle.each do |alt|
+          verbatim << @sentences[alt[0]]
+          suffix = @sentences[alt[0]][alt[1]..-1]
+          potential = tikis[0..start + 1] + suffix
+
+          # Ensure we"re not just rebuilding some segment of another sentence
+          unless verbatim.find { |v| NLP.subseq?(v, potential) || NLP.subseq?(potential, v) }
+            used << alt[0]
+            variant = potential
+            break
+          end
+        end
+
+        break if variant
+      end
+
+      # If we failed to produce a variation from any alternative, there
+      # is no use running additional passes-- they"ll have the same result.
+      break if variant.nil?
+
+      tikis = variant
+    end
+
+    tikis
+  end
+
+  def default_generator()
+    @unigrams = {}
+    @bigrams = {}
+
+    @sentences.each_with_index do |tikis, i|
+      last_tiki = INTERIM
+      tikis.each_with_index do |tiki, j|
+        @unigrams[last_tiki] ||= []
+        @unigrams[last_tiki] << [i, j]
+
+        @bigrams[last_tiki] ||= {}
+        @bigrams[last_tiki][tiki] ||= []
+
+        if j == tikis.length - 1 # Mark sentence endings
+          @unigrams[tiki] ||= []
+          @unigrams[tiki] << [i, INTERIM]
+          @bigrams[last_tiki][tiki] << [i, INTERIM]
+        else
+          @bigrams[last_tiki][tiki] << [i, j + 1]
+        end
+
+        last_tiki = tiki
+      end
+    end
+
+    Unigrams.bulk_insert do |worker|
+      @unigrams.each do |key, values|
+        values.each do |v|
+          unigram = "|" + v.join("|").to_s + "|"
+          worker.add next_tiki: key, unigram: unigram
+        end
+      end
+    end
+
+    Bigrams.bulk_insert do |worker|
+      @bigrams.each do |key, subkeys|
+        subkeys.each do |subkey, value|
+          value.each do |v|
+            bigram = + "|" + v.join("|").to_s + "|"
+            worker.add next_tiki: key, tiki: subkey, bigram: bigram
+          end
+        end
+      end
+    end
   end
 end

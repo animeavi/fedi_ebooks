@@ -1,4 +1,5 @@
 # encoding: utf-8
+
 # rubocop:disable Style/StringLiterals
 
 require "fast-stemmer"
@@ -104,15 +105,15 @@ class NLP
     text = Highscore::Content.new(text)
 
     text.configure do
-      #set :multiplier, 2
-      #set :upper_case, 3
-      #set :long_words, 2
-      #set :long_words_threshold, 15
-      #set :vowels, 1                     # => default: 0 = not considered
-      #set :consonants, 5                 # => default: 0 = not considered
-      set :ignore_case, true             # => default: false
+      # set :multiplier, 2
+      # set :upper_case, 3
+      # set :long_words, 2
+      # set :long_words_threshold, 15
+      # set :vowels, 1                     # => default: 0 = not considered
+      # set :consonants, 5                 # => default: 0 = not considered
+      set :ignore_case, true # => default: false
       set :word_pattern, /(?<!@)(?<=\s)[\p{Word}']+/ # => default: /\w+/
-      #set :stemming, true                # => default: false
+      # set :stemming, true                # => default: false
     end
 
     text.keywords
@@ -127,6 +128,7 @@ class NLP
     last_token = nil
     tikis.each do |tiki|
       next if tiki == INTERIM
+
       token = tokens[tiki]
       text += " " if last_token && space_between?(last_token, token)
       text += token

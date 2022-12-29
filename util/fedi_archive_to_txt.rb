@@ -59,6 +59,7 @@ statuses.each do |s|
     content = HTMLEntities.new.decode content.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
 
     next if content.nil?
+
     mentions = s['mentions']
     mentions.each do |m|
       content = content.gsub("@" + m['acct'], '') || content

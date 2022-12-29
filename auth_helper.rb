@@ -23,7 +23,7 @@ instance_url = temp.strip == "" ? config["INSTANCE_URL"] : temp
 if instance_url != config["INSTANCE_URL"]
   print "Save instance's url to #{yml_config}? (y/n) [default: YES]: "
   temp = gets.chomp
-  
+
   if yes_no_choice(temp)
     config["INSTANCE_URL"] = instance_url
     File.open(yml_config, "w") { |f| YAML.dump(config, f) }
@@ -38,7 +38,7 @@ bot_username = temp.strip == "" ? config["BOT_USERNAME"] : temp
 if bot_username != config["BOT_USERNAME"]
   print "Save bot's username to #{yml_config}? (y/n) [default: YES]: "
   temp = gets.chomp
-  
+
   if yes_no_choice(temp)
     config["BOT_USERNAME"] = bot_username
     File.open(yml_config, "w") { |f| YAML.dump(config, f) }
