@@ -45,23 +45,13 @@ class Model
   # The top 200 most important keywords, in descending order
   attr_accessor :keywords
 
+  # @return String
+  # Path to the database
+  attr_accessor :path
+
   # For Pleroma
   LINEBREAK_PLACEHOLDER = "&_#_1_0_;"
   HTML_LINEBREAK = "&#10;"
-
-  # Generate a new model from a corpus file
-  # @param path [String]
-  # @return [Ebooks::Model]
-  def self.consume(path)
-    Model.new.consume(path)
-  end
-
-  # Generate a new model from multiple corpus files
-  # @param paths [Array<String>]
-  # @return [Ebooks::Model]
-  def self.consume_all(paths)
-    Model.new.consume_all(paths)
-  end
 
   # Set ups the database connection
   # @param path [String]
@@ -69,7 +59,7 @@ class Model
     ActiveRecord::Base.clear_active_connections!
     ActiveRecord::Base.establish_connection(
       :adapter => "sqlite3",
-      :database => "#{$bot_username}.db"
+      :database => path
     )
   end
 
@@ -106,9 +96,8 @@ class Model
   end
 
   # Populates the database for the model
-  # @param path [String]
-  def save(path)
-    create_db(path)
+  def save()
+    create_db(@path)
 
     Tokens.bulk_insert do |worker|
       i = 0
@@ -136,12 +125,12 @@ class Model
     exit 0
   end
 
-  def initialize
+  def initialize(path)
     ActiveRecord::Base.logger = Logger.new(STDERR)
     ActiveRecord::Base.logger.level = :error
 
+    @path = path
     @tokens = []
-
     # Reverse lookup tiki by token, for faster generation
     @tikis = {}
   end

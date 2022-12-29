@@ -63,7 +63,6 @@ def log(*args)
   $stdout.flush
 end
 
-
 def reply
   case $software
   when InstanceType::MASTODON, InstanceType::PLEROMA
@@ -170,7 +169,7 @@ def reply_mastodon
 end
 
 def reply_timeline_mastodon
-  headers = {"Content-Type": "application/json", "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json", "Authorization": "Bearer #{$bearer_token}" }
   tl = HTTParty.get("#{$instance_url}/api/v1/timelines/home?since_id=#{$last_id_tl}", headers: headers)
   return if tl.key?("errors")
 
@@ -266,8 +265,8 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
     exit 1
   end
 
-  headers = {"Content-Type": "application/json",
-             "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json",
+              "Authorization": "Bearer #{$bearer_token}" }
 
   body = {}
   body["status"] = resp
@@ -284,7 +283,7 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
   body["media_ids"] = media_ids if media_ids.size > 0
 
   HTTParty.post("#{$instance_url}/api/v1/statuses",
-    body: JSON.dump(body), headers: headers)
+                body: JSON.dump(body), headers: headers)
 end
 
 def create_status_misskey(resp, status_id: nil, media_ids: [])
@@ -293,8 +292,8 @@ def create_status_misskey(resp, status_id: nil, media_ids: [])
 end
 
 def get_id_from_username(account)
-  headers = {"Content-Type": "application/json",
-             "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json",
+              "Authorization": "Bearer #{$bearer_token}" }
 
   req_url = $instance_url + "/api/v1/accounts/#{account}"
   resp = JSON.parse(HTTParty.get(req_url, headers: headers).to_s)
@@ -303,8 +302,8 @@ def get_id_from_username(account)
 end
 
 def follow_account(account)
-  headers = {"Content-Type": "application/json",
-             "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json",
+              "Authorization": "Bearer #{$bearer_token}" }
 
   account = get_id_from_username(account)
   req_url = $instance_url + "/api/v1/accounts/#{account}/follow"
@@ -312,8 +311,8 @@ def follow_account(account)
 end
 
 def unfollow_account(account)
-  headers = {"Content-Type": "application/json",
-             "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json",
+              "Authorization": "Bearer #{$bearer_token}" }
 
   account = get_id_from_username(account)
   req_url = $instance_url + "/api/v1/accounts/#{account}/unfollow"
@@ -322,13 +321,13 @@ end
 
 # Shamelessly copied from mastodon-api
 def upload_media(path)
-  headers = {"Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Authorization": "Bearer #{$bearer_token}" }
   file = File.new(path)
   file = HTTP::FormData::File.new(file)
-  body = {file: file}
+  body = { file: file }
 
   response = HTTP.headers(headers).public_send(:post,
-    "#{$instance_url}/api/v1/media", form: body)
+                                               "#{$instance_url}/api/v1/media", form: body)
   JSON.parse(response.body.to_s)["id"]
 end
 
@@ -337,8 +336,8 @@ def upload_media_misskey(path)
   url = URI.parse("#{$instance_url}/api/drive/files/create")
 
   req = Net::HTTP::Post::Multipart.new(url.path,
-    "file": UploadIO.new(file, "application/octet-stream", File.basename(path)),
-    "i": $bearer_token)
+                                       "file": UploadIO.new(file, "application/octet-stream", File.basename(path)),
+                                       "i": $bearer_token)
 
   n = Net::HTTP.new(url.host, url.port)
   n.use_ssl = (url.scheme == "https")
@@ -422,7 +421,7 @@ def detect_infinite_loop(account)
   if $accounts_mentioning_stored_time.nil?
     $accounts_mentioning_stored_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     return false
-  elseif (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $accounts_mentioning_stored_time) >= 300
+  elsif (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $accounts_mentioning_stored_time) >= 300
     # Reset after 5 minutes
     $accounts_mentioning_stored_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     $accounts_mentioning = {}
@@ -431,6 +430,7 @@ def detect_infinite_loop(account)
   if !$accounts_mentioning[account].nil?
     # If we detect 10 or more posts in 5 minutes we assume it's an infinite loop (another bot)
     return true if $accounts_mentioning[account] >= 10
+
     $accounts_mentioning[account] = $accounts_mentioning[account] + 1
   else
     $accounts_mentioning[account] = 1
@@ -444,8 +444,8 @@ def generate_reply(status_text, limit = $reply_length_limit)
 end
 
 def get_mentions_notifications
-  headers = {"Content-Type": "application/json",
-             "Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Content-Type": "application/json",
+              "Authorization": "Bearer #{$bearer_token}" }
 
   case $software
   when InstanceType::MASTODON
@@ -455,11 +455,11 @@ def get_mentions_notifications
   when InstanceType::PLEROMA
     req_url = "#{$instance_url}/api/v1/notifications?include_types[]=mention"
   when InstanceType::MISSKEY
-    body = {"i": $bearer_token, "includeTypes": ["mention"]}
-    headers = {"Content-Type": "application/json"}
+    body = { "i": $bearer_token, "includeTypes": ["mention"] }
+    headers = { "Content-Type": "application/json" }
 
     return JSON.parse(HTTParty.post("#{$instance_url}/api/i/notifications",
-      body: JSON.dump(body), headers: headers).to_s)
+                                    body: JSON.dump(body), headers: headers).to_s)
   else
     log "Invalid instance type!"
     exit 1
@@ -469,7 +469,7 @@ def get_mentions_notifications
 end
 
 def delete_notification(id)
-  headers = {"Authorization": "Bearer #{$bearer_token}"}
+  headers = { "Authorization": "Bearer #{$bearer_token}" }
 
   case $software
   when InstanceType::MASTODON
@@ -479,9 +479,9 @@ def delete_notification(id)
     req_url = $instance_url + "/api/v1/notifications/destroy_multiple?ids[]=#{id}"
     HTTParty.delete(req_url, headers: headers)
   when InstanceType::MISSKEY
-    body = {"i": $bearer_token, "notificationId": id}
+    body = { "i": $bearer_token, "notificationId": id }
     HTTParty.post("#{$instance_url}/api/notifications/read",
-      body: JSON.dump(body), headers: headers)
+                  body: JSON.dump(body), headers: headers)
   else
     log "Invalid instance type!"
     exit 1
@@ -490,9 +490,9 @@ end
 
 def get_software
   begin
-    headers = {"Content-Type": "application/json"}
+    headers = { "Content-Type": "application/json" }
     version = HTTParty.get("#{$instance_url}/api/v1/instance",
-      headers: headers)["version"]
+                           headers: headers)["version"]
     version = version.downcase
     $software = version.include?("pleroma") ? InstanceType::PLEROMA : InstanceType::MASTODON
 
@@ -502,9 +502,9 @@ def get_software
   end
 
   begin
-    headers = {"Content-Type": "application/json"}
+    headers = { "Content-Type": "application/json" }
     unless HTTParty.post("#{$instance_url}/api/meta",
-      headers: headers)["driveCapacityPerLocalUserMb"].nil?
+                         headers: headers)["driveCapacityPerLocalUserMb"].nil?
       $software = InstanceType::MISSKEY
 
       return
@@ -518,10 +518,10 @@ def init
   get_software
   case $software
   when InstanceType::MASTODON, InstanceType::PLEROMA
-    headers = {"Content-Type": "application/json",
-               "Authorization": "Bearer #{$bearer_token}"}
+    headers = { "Content-Type": "application/json",
+                "Authorization": "Bearer #{$bearer_token}" }
     request = HTTParty.get("#{$instance_url}/api/v1/accounts/verify_credentials",
-      headers: headers)
+                           headers: headers)
 
     $bot_username = request["acct"]
     $software_string = $software == InstanceType::MASTODON ? "Mastodon" : "Pleroma"
@@ -529,10 +529,10 @@ def init
     log "Misskey support not implemented!"
     exit 1
 
-    body = {"i": $bearer_token}
-    headers = {"Content-Type": "application/json"}
+    body = { "i": $bearer_token }
+    headers = { "Content-Type": "application/json" }
     request = JSON.parse(HTTParty.post("#{$instance_url}/api/i",
-      body: JSON.dump(body), headers: headers).to_s)
+                                       body: JSON.dump(body), headers: headers).to_s)
 
     $bot_username = request["username"]
     $software_string = "Misskey"
@@ -548,7 +548,14 @@ def init
 
   model_path = "#{$bot_username}.db"
 
-  Model.consume_all($corpus_path).save(model_path) unless File.file?(model_path)
+  if File.file?(model_path)
+    $model = Model.new(model_path)
+    log "Database " + $model.path + " loaded."
+  else
+    $model = Model.new(model_path)
+    log "Creating database " + $model.path + "..."
+    $model.consume_all($corpus_path).save
+  end
 
   log "Connected to #{$instance_url} (#{$software_string})"
 end
@@ -566,7 +573,7 @@ scheduler.every "30s" do
   reply
 
   # Comment this out if you want timeline replies
-  #reply_timeline
+  # reply_timeline
 end
 
 loop do
