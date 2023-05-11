@@ -62,8 +62,8 @@ class NLP
   # @param text [String]
   # @return [String]
   def self.normalize(text)
-    text.gsub("&#10;", "&_#_1_0_;")
-    htmlentities.decode text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
+    text = text.gsub("&#10;", "&_#_1_0_;")
+    text = htmlentities.decode text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
     text.gsub("&_#_1_0_;", "&#10;")
   end
 
