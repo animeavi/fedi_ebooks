@@ -1,6 +1,4 @@
-# encoding: utf-8
-
-# rubocop:disable Style/StringLiterals, Style/GlobalVars
+# rubocop:disable Style/StringLiterals, Style/GlobalVars, Metrics
 
 require "http"
 require "http/request"
@@ -12,7 +10,7 @@ require "yaml"
 require_relative "mispy/model"
 require_relative "mispy/nlp"
 
-config = YAML.load(File.read("config.yml"))
+config = YAML.safe_load(File.read("config.yml"))
 $instance_url = config["INSTANCE_URL"]
 $bearer_token = config["BEARER_TOKEN"]
 $corpus_path = config["CORPUS_FILES"]
@@ -59,7 +57,7 @@ end
 scheduler = Rufus::Scheduler.new
 
 def log(*args)
-  $stdout.print "@#{$bot_username}: " + args.map(&:to_s).join(" ") + "\n"
+  $stdout.print "@#{$bot_username}: #{args.map(&:to_s).join(' ')}\n"
   $stdout.flush
 end
 
@@ -70,8 +68,8 @@ def reply
   when InstanceType::MISSKEY
     reply_misskey
   else
-    log "Invalid instance type!"
-    exit 1
+    log("Invalid instance type!")
+    exit(1)
   end
 end
 
@@ -82,8 +80,8 @@ def reply_timeline
   when InstanceType::MISSKEY
     reply_timeline_misskey
   else
-    log "Invalid instance type!"
-    exit 1
+    log("Invalid instance type!")
+    exit(1)
   end
 end
 
@@ -128,7 +126,7 @@ def reply_mastodon
 
     # Avoid responding to duplicate status
     if $seen_status[status_id]
-      log "Not handling duplicate status #{status_id}"
+      log("Not handling duplicate status #{status_id}")
       delete_notification(notif_id)
       next
     else
@@ -149,7 +147,7 @@ def reply_mastodon
     end
 
     if detect_infinite_loop(account)
-      log "Infinite loop detected from @#{account}!"
+      log("Infinite loop detected from @#{account}!")
       delete_notification(notif_id)
       next
     end
@@ -158,11 +156,11 @@ def reply_mastodon
 
     status_text = NLP.remove_html_tags(n["status"]["content"])
     status_mentionless = get_status_mentionless(status_text, mentions)
-    log "Mention from @#{account}: #{status_mentionless}"
+    log("Mention from @#{account}: #{status_mentionless}")
     resp = generate_reply(status_mentionless)
     resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
-    log "Replying with: #{resp}"
+    log("Replying with: #{resp}")
     create_status(resp, status_id: status_id)
     delete_notification(notif_id)
   end
@@ -175,7 +173,7 @@ def reply_timeline_mastodon
 
   i = 0
   tl.each do |t|
-    if i == 0
+    if i.zero?
       $last_id_tl = t["id"]
       i = 1
     end
@@ -217,13 +215,13 @@ def reply_timeline_mastodon
     end
 
     if should_reply
-      log "Post on the TL from @#{account}: #{status_mentionless}"
+      log("Post on the TL from @#{account}: #{status_mentionless}")
 
       extra_mentions = handle_extra_mentions(mentions, account)
       resp = generate_reply(status_mentionless)
       resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
-      log "Replying with: #{resp}"
+      log("Replying with: #{resp}")
       create_status(resp, status_id: status_id)
     end
 
@@ -232,14 +230,14 @@ def reply_timeline_mastodon
 end
 
 def reply_misskey
-  log "Misskey support not implemented!"
-  exit 1
+  log("Misskey support not implemented!")
+  exit(1)
 
   notifs = get_mentions_notifications
 
   notifs.each do |n|
     account = n["user"]["username"]
-    account = "#{account}@#{n["user"]["host"]}" unless n["user"]["host"].nil?
+    account = "#{account}@#{n['user']['host']}" unless n["user"]["host"].nil?
     status_id = n["note"]["id"]
     is_reblog = !n["note"]["renoteId"].nil?
     mentions = n["note"]["mentions"] # Not terribly useful
@@ -255,14 +253,14 @@ def reply_misskey
 end
 
 def reply_timeline_misskey
-  log "Misskey support not implemented!"
-  exit 1
+  log("Misskey support not implemented!")
+  exit(1)
 end
 
 def create_status(resp, status_id: nil, content_type: "", media_ids: [])
   if (content_type != "") && ($software != InstanceType::PLEROMA)
-    log "Only Pleroma instances support custom content types!"
-    exit 1
+    log("Only Pleroma instances support custom content types!")
+    exit(1)
   end
 
   headers = { "Content-Type": "application/json",
@@ -274,21 +272,21 @@ def create_status(resp, status_id: nil, content_type: "", media_ids: [])
   if $allowed_content_types.include? content_type
     body["content_type"] = content_type
   elsif content_type != ""
-    log "Invalid content type!"
-    log "Allowed content types are: #{$allowed_content_types}"
-    exit 1
+    log("Invalid content type!")
+    log("Allowed content types are: #{$allowed_content_types}")
+    exit(1)
   end
 
   body["in_reply_to_id"] = status_id unless status_id.nil?
-  body["media_ids"] = media_ids if media_ids.size > 0
+  body["media_ids"] = media_ids if media_ids.size.positive?
 
   HTTParty.post("#{$instance_url}/api/v1/statuses",
                 body: JSON.dump(body), headers: headers)
 end
 
 def create_status_misskey(resp, status_id: nil, media_ids: [])
-  log "Misskey support not implemented!"
-  exit 1
+  log("Misskey support not implemented!")
+  exit(1)
 end
 
 def get_id_from_username(account)
@@ -355,7 +353,7 @@ def get_extra_mentions(mentions, account)
     next if m["acct"].downcase == $bot_username.downcase
     next if m["acct"].downcase == account.downcase
 
-    extra_mentions = "#{extra_mentions}@#{m["acct"]} "
+    extra_mentions = "#{extra_mentions}@#{m['acct']} "
   end
 
   extra_mentions.strip
@@ -391,27 +389,27 @@ def handle_extra_mentions(mentions, account)
       if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - $mentions_counter_timer[sorted_mentions]) >= 900
         $mentions_counter[sorted_mentions] = 1
         $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        return extra_mentions
+        extra_mentions
       elsif $mentions_counter[sorted_mentions] == 5
-        return ""
+        ""
       else
         $mentions_counter[sorted_mentions] = $mentions_counter[sorted_mentions] + 1
-        return extra_mentions
+        extra_mentions
       end
     else
       $mentions_counter[sorted_mentions] = 1
       $mentions_counter_timer[sorted_mentions] = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      return extra_mentions
+      extra_mentions
     end
   else
-    return extra_mentions
+    extra_mentions
   end
 end
 
 def get_status_mentionless(status_text, mentions)
   mentions.each do |m|
-    status_text = status_text.gsub("@#{m["acct"]}", "")
-    status_text = status_text.gsub("@#{m["username"]}", "")
+    status_text = status_text.gsub("@#{m['acct']}", "")
+    status_text = status_text.gsub("@#{m['username']}", "")
   end
 
   status_text.strip
@@ -436,7 +434,7 @@ def detect_infinite_loop(account)
     $accounts_mentioning[account] = 1
   end
 
-  return false
+  false
 end
 
 def generate_reply(status_text, limit = $reply_length_limit)
@@ -461,8 +459,8 @@ def get_mentions_notifications
     return JSON.parse(HTTParty.post("#{$instance_url}/api/i/notifications",
                                     body: JSON.dump(body), headers: headers).to_s)
   else
-    log "Invalid instance type!"
-    exit 1
+    log("Invalid instance type!")
+    exit(1)
   end
 
   JSON.parse(HTTParty.get(req_url, headers: headers).to_s)
@@ -483,8 +481,8 @@ def delete_notification(id)
     HTTParty.post("#{$instance_url}/api/notifications/read",
                   body: JSON.dump(body), headers: headers)
   else
-    log "Invalid instance type!"
-    exit 1
+    log("Invalid instance type!")
+    exit(1)
   end
 end
 
@@ -506,8 +504,6 @@ def get_software
     unless HTTParty.post("#{$instance_url}/api/meta",
                          headers: headers)["driveCapacityPerLocalUserMb"].nil?
       $software = InstanceType::MISSKEY
-
-      return
     end
   rescue
     # Ignored
@@ -526,8 +522,8 @@ def init
     $bot_username = request["acct"]
     $software_string = $software == InstanceType::MASTODON ? "Mastodon" : "Pleroma"
   when InstanceType::MISSKEY
-    log "Misskey support not implemented!"
-    exit 1
+    log("Misskey support not implemented!")
+    exit(1)
 
     body = { "i": $bearer_token }
     headers = { "Content-Type": "application/json" }
@@ -537,27 +533,30 @@ def init
     $bot_username = request["username"]
     $software_string = "Misskey"
   else
-    log "Invalid instance type!"
-    exit 1
+    log("Invalid instance type!")
+    exit(1)
   end
 
   if $bot_username.nil?
-    log "Unable to get the account's username! Check your credentials!"
-    exit 1
+    log("Unable to get the account's username! Check your credentials!")
+    exit(1)
   end
 
   model_path = "#{$bot_username}.db"
+  $model = Model.new(model_path)
 
   if File.file?(model_path)
-    $model = Model.new(model_path)
-    log "Database " + $model.path + " loaded."
+    log("Database #{$model.path} loaded.")
   else
-    $model = Model.new(model_path)
-    log "Creating database " + $model.path + "..."
+    log("Creating database #{$model.path}...")
     $model.consume_all($corpus_path).save
   end
 
-  log "Connected to #{$instance_url} (#{$software_string})"
+  keywords = $model.get_keywords
+  $top20 = keywords.take(20)
+  $top100 = keywords.take(100)
+
+  log("Connected to #{$instance_url} (#{$software_string})")
 end
 
 init
@@ -565,7 +564,7 @@ init
 # Post a random post every 1 hour
 scheduler.every "1h" do
   status = $model.make_statement($reply_length_limit)
-  log "Posting: #{status}"
+  log("Posting: #{status}")
   create_status(status)
 end
 

@@ -63,8 +63,8 @@ class NLP
   # @param text [String]
   # @return [String]
   def self.normalize(text)
-    text.gsub("&#10;", "&_#_1_0_;")
-    htmlentities.decode text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
+    text = text.gsub("&#10;", "&_#_1_0_;")
+    text = htmlentities.decode(text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...'))
     text.gsub("&_#_1_0_;", "&#10;")
   end
 
@@ -117,24 +117,6 @@ class NLP
     end
 
     text.keywords
-  end
-
-  # Builds a proper sentence from a list of tikis
-  # @param tikis [Array<Integer>]
-  # @param tokens [Array<String>]
-  # @return [String]
-  def self.reconstruct(tikis, tokens)
-    text = ""
-    last_token = nil
-    tikis.each do |tiki|
-      next if tiki == INTERIM
-
-      token = tokens[tiki]
-      text += " " if last_token && space_between?(last_token, token)
-      text += token
-      last_token = token
-    end
-    text
   end
 
   # Determine if we need to insert a space between two tokens
