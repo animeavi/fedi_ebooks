@@ -566,6 +566,19 @@ end
 
 init
 
+# Prettier errors
+def scheduler.on_error(job, error)
+  log("Exception caught in scheduler thread #{error.inspect}!")
+
+  puts("\n------------ Backtrace Below ------------\n\n")
+
+  error.backtrace.each do |line|
+  	puts("#{line}")
+  end
+
+  puts("\n\n------------ End of Backtrace ------------\n\n")
+end
+
 # Post a random post every 1 hour
 scheduler.every "1h" do
   status = $model.make_statement($reply_length_limit)
