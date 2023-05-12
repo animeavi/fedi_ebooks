@@ -492,7 +492,12 @@ def get_software
     version = HTTParty.get("#{$instance_url}/api/v1/instance",
                            headers: headers)["version"]
     version = version.downcase
-    $software = version.include?("pleroma") ? InstanceType::PLEROMA : InstanceType::MASTODON
+
+    if version.include?("pleroma") || version.include?("akkoma")
+      $software = InstanceType::PLEROMA
+    else
+      $software = InstanceType::MASTODON
+    end
 
     return
   rescue
