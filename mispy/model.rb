@@ -366,7 +366,32 @@ class Model
       last_token = token
     end
 
-    text
+    cleanup_final_text(text)
+  end
+
+  # Clean up final text before returning it
+  # @param text [String]
+  # @return [String]
+  def cleanup_final_text(text)
+    # Clean stray stuff
+    single = ["\"", "'"]
+    single.each do |s|
+      text = text.gsub(s, "") if text.scan(s).count == 1
+    end
+
+    strays = [["(", ")"], ["[", "]"]]
+    strays.each do |stray_pair|
+      opening = text.scan(stray_pair[0]).count == 1
+      closing = text.scan(stray_pair[1]).count == 1
+      if opening && !closing
+        text = text.gsub(stray_pair[0], "")
+      elsif !opening && closing
+        text = text.gsub(stray_pair[1], "")
+      end
+    end
+
+    # Make all spaces single spaces
+    text = text.squeeze(" ")
   end
 
   # Correct encoding issues in generated text
