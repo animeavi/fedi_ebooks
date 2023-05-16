@@ -66,6 +66,7 @@ class Model
       extension = path.split(".")[-2].downcase
 
       require "zlib"
+      Encoding.default_external = "UTF-8" # Just in case
       gz = Zlib::GzipReader.new(File.open(path, "rb"))
       content = gz.read
       gz.close
