@@ -56,9 +56,9 @@ class Model
     @tikis = {}
   end
 
-  # Consume a corpus into this model
+  # Shared consume code
   # @param path [String]
-  def consume(path)
+  def consume_common(path)
     content = ""
     extension = path.split(".")[-1].downcase
 
@@ -108,6 +108,24 @@ class Model
       lines = content.split("\n")
     end
 
+    lines
+  end
+
+  # Consume a corpus into this model
+  # @param path [String]
+  def consume(path)
+    consume_lines(consume_common(path))
+  end
+
+  # Consume multiple corpuses into this model
+  # @param paths [Array<String>]
+  def consume_all(paths)
+    lines = []
+    paths.each do |path|
+      l = consume_common(path)
+      lines.concat(l)
+    end
+
     consume_lines(lines)
   end
 
@@ -133,70 +151,6 @@ class Model
     log("Top keywords: #{@keywords[0]} #{@keywords[1]} #{@keywords[2]}")
 
     self
-  end
-
-  # Consume multiple corpuses into this model
-  # @param paths [Array<String>]
-  def consume_all(paths)
-    lines = []
-    paths.each do |path|
-      content = ""
-      extension = path.split(".")[-1].downcase
-
-      if extension == "gz"
-        extension = path.split(".")[-2].downcase
-
-        require "zlib"
-        gz = Zlib::GzipReader.new(File.open(path, "rb"))
-        content = gz.read
-        gz.close
-      else
-        content = File.read(path, encoding: "utf-8")
-      end
-
-      case extension
-      when "json"
-        log("Reading json corpus from #{path}")
-        json_content = JSON.parse(content)
-        twitter_json = content.include?("\"retweeted\"")
-
-        if twitter_json
-          l = json_content.map do |tweet|
-            tweet["text"]
-          end
-        else
-          statuses = if json_content.include?('statuses')
-                       json_content['statuses']
-                     else
-                       json_content
-                     end
-
-          l = statuses.map do |status|
-            pleroma_cleanup(status)
-          end
-
-          l.compact! # Remove nil values
-        end
-
-        lines.concat(l)
-      when "csv"
-        log("Reading CSV corpus from #{path}")
-        content = CSV.parse(content)
-        header = content.shift
-        text_col = header.index("text")
-        l = content.map do |tweet|
-          tweet[text_col]
-        end
-
-        lines.concat(l)
-      else
-        log("Reading plaintext corpus from #{path}")
-        l = content.split("\n")
-
-        lines.concat(l)
-      end
-    end
-    consume_lines(lines)
   end
 
   # Generates a response by looking for related sentences
