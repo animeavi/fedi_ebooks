@@ -59,9 +59,22 @@ class Model
   # Consume a corpus into this model
   # @param path [String]
   def consume(path)
-    content = File.read(path, encoding: "utf-8")
+    content = ""
+    extension = path.split(".")[-1].downcase
 
-    case path.split(".")[-1]
+    if extension == "gz"
+      extension = path.split(".")[-2].downcase
+
+      require "zlib"
+      gz = Zlib::GzipReader.new(File.open(path, "rb"))
+      content = gz.read
+      gz.close
+    else
+    	content = File.read(path, encoding: "utf-8")
+    end
+
+    lines = []
+    case extension
     when "json"
       log("Reading json corpus from #{path}")
       json_content = JSON.parse(content)
@@ -127,9 +140,21 @@ class Model
   def consume_all(paths)
     lines = []
     paths.each do |path|
-      content = File.read(path, encoding: "utf-8")
+      content = ""
+      extension = path.split(".")[-1].downcase
 
-      case path.split(".")[-1]
+      if extension == "gz"
+        extension = path.split(".")[-2].downcase
+
+        require "zlib"
+        gz = Zlib::GzipReader.new(File.open(path, "rb"))
+        content = gz.read
+        gz.close
+      else
+        content = File.read(path, encoding: "utf-8")
+      end
+
+      case extension
       when "json"
         log("Reading json corpus from #{path}")
         json_content = JSON.parse(content)
