@@ -71,7 +71,7 @@ class Model
       content = gz.read
       gz.close
     else
-    	content = File.read(path, encoding: "utf-8")
+      content = File.read(path, encoding: "utf-8")
     end
 
     lines = []
