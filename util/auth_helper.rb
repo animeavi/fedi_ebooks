@@ -4,7 +4,7 @@ require "net/http"
 require "uri"
 require "yaml"
 
-yml_config = "config.yml"
+yml_config = "../config.yml"
 config = YAML.load(File.read(yml_config))
 
 def yes_no_choice(temp)

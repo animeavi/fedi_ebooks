@@ -13,7 +13,7 @@ You need to create an app, and generate a bearer token for your bot, we have a s
 
 ## Generating your bearer token
 
-Included in the root of this repository is **auth_helper.rb**, you can use it to generate a bearer token for your bot and have the option to add it **config.yml**, if you wish. Just run **auth_helper.rb** and follow the interactive prompts.
+Included in the **util** directory of this repository is **auth_helper.rb**, you can use it to generate a bearer token for your bot and have the option to add it **config.yml**, if you wish. Just run **auth_helper.rb** and follow the interactive prompts.
 
 Next you will need a corpus file or files, which will be the source of the bot's posts.
 
@@ -62,9 +62,9 @@ This is fine in some cases, but I recommend creating a service for the bot so it
 Also, it is recommended to run the bot once to generate the .model file and then restart, to decrease memory usage that is experienced when generating it. Depending on the size of the corpus file, you may want to have a swap file on your server or generate the .model on your desktop/laptop before uploading it to the server, as it may use a lot of memory for this process, but you only need to do this once and whenever you update the archive.
 
 
-## Creating a service (systemd)
+## Creating a service (systemd and OpenRC)
 
-I've included an example service file for systemd called `example.service`, but you’ll have to edit some of this stuff to match your system.
+I've included an example service file for systemd called `example.service` and one for OpenRC called `example.openrc` in the **util** directory, but you’ll have to edit some of this stuff to match your system.
 
 
 First install GNU Screen:
@@ -73,6 +73,7 @@ First install GNU Screen:
 
 `sudo pacman -S screen` (Arch) 
 
+### systemd
 Create the service file (you may not have nano installed by default, eg: Arch, install it)
 
 `sudo nano /etc/systemd/system/fediebooks.service`
@@ -97,6 +98,34 @@ sudo systemctl start fediebooks
 
 Now the service should be running and start automatically on boot.
 
+### OpenRC
+Create the service file (you may not have nano installed by default, eg: Arch, install it)
+
+`sudo nano /etc/init.d/fediebooks`
+
+Paste the contents of the example file here.
+
+Where it says `command_user=`, edit with your Linux username.
+
+Edit everywhere that says `/path/to/your/bot/files` to the folder where your bot files are.
+
+Edit `/home/user/.gem/ruby/3.0.0/bin/bundler` to what the command `which bundler` gives you
+
+Edit `/usr/bin/ruby` to what the command `which ruby` gives you (should match most systems already)
+
+Save the file (CTRL+S).
+
+Run
+```
+sudo chmod +x /etc/init.d/fediebooks
+sudo rc-update add fediebooks default
+sudo rc-service fediebooks start
+```
+
+Now the service should be running and start automatically on boot.
+
+
+## Monitoring the bot
 To check on the bot's console output while it's running: `screen -r fediebooks`
 
 To leave without killing the screen hold CTRL then press A, D.

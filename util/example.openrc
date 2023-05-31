@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+name="fediebooks"
+description="ebooks bot for the fediverse"
+supervisor="supervise-daemon"
+command="/usr/bin/screen"
+command_args="-L -DmS fediebooks /home/user/.gem/ruby/3.0.0/bin/bundler exec /usr/bin/ruby /path/to/your/bot/files/fedi_ebooks.rb"
+pidfile="/tmp/fediebooks.pid"
+directory="/path/to/your/bot/files"
+command_user="YOUR_USER_HERE"
+
+depend() {
+    after net
+}

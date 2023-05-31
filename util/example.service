@@ -1,5 +1,5 @@
 [Unit]
-Description=fediebooks
+Description=ebooks bot for the fediverse
 Wants=network-online.target
 After=network-online.target
  
