@@ -50,7 +50,7 @@ module FediEbooks
 
         # Avoid responding to duplicate status
         if @seen_status[status_id]
-          FediEbooks::Logger.log("Not handling duplicate status #{status_id}")
+          @logger.log("Not handling duplicate status #{status_id}")
           delete_notification(notif_id)
           next
         else
@@ -71,7 +71,7 @@ module FediEbooks
         end
 
         if detect_infinite_loop(account)
-          FediEbooks::Logger.log("Infinite loop detected from @#{account}!")
+          @logger.log("Infinite loop detected from @#{account}!")
           delete_notification(notif_id)
           next
         end
@@ -80,11 +80,11 @@ module FediEbooks
 
         status_text = NLP.remove_html_tags(n["status"]["content"])
         status_mentionless = get_status_mentionless(status_text, mentions)
-        FediEbooks::Logger.log("Mention from @#{account}: #{status_mentionless}")
+        @logger.log("Mention from @#{account}: #{status_mentionless}")
         resp = generate_reply(model, status_mentionless)
         resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
-        FediEbooks::Logger.log("Replying with: #{resp}")
+        @logger.log("Replying with: #{resp}")
         create_status(resp, status_id: status_id)
         delete_notification(notif_id)
       end
@@ -141,13 +141,13 @@ module FediEbooks
         end
 
         if should_reply
-          FediEbooks::Logger.log("Post on the TL from @#{account}: #{status_mentionless}")
+          @logger.log("Post on the TL from @#{account}: #{status_mentionless}")
 
           extra_mentions = handle_extra_mentions(mentions, account)
           resp = generate_reply(model, status_mentionless)
           resp = extra_mentions != "" ? "@#{account} #{extra_mentions} #{resp}" : "@#{account} #{resp}"
 
-          FediEbooks::Logger.log("Replying with: #{resp}")
+          @logger.log("Replying with: #{resp}")
           create_status(resp, status_id: status_id)
         end
 
@@ -165,8 +165,8 @@ module FediEbooks
       if Constants.allowed_content_types.include? content_type
         body["content_type"] = content_type
       elsif content_type != ""
-        FediEbooks::Logger.log("Invalid content type!")
-        FediEbooks::Logger.log("Allowed content types are: #{Constants.allowed_content_types}")
+        @logger.log("Invalid content type!")
+        @logger.log("Allowed content types are: #{Constants.allowed_content_types}")
         exit(1)
       end
 

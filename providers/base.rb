@@ -12,6 +12,7 @@ require_relative "../mispy/nlp"
 
 module FediEbooks
   class BaseProvider
+    @logger
     @accounts_mentioning
     @accounts_mentioning_stored_time
     @mentions_counter
@@ -23,6 +24,7 @@ module FediEbooks
     end
 
     def initialize
+      @logger = FediEbooks::Logger.instance
       @accounts_mentioning = {}
       @accounts_mentioning_stored_time = nil
       @mentions_counter = {}

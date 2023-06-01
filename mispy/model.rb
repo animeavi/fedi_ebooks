@@ -43,12 +43,16 @@ module FediEbooks
     # @return String
     # Path to the database
     attr_accessor :path
+    
+    # Logger
+    attr_reader :logger
 
     # For Pleroma
     LINEBREAK_PLACEHOLDER = "&_#_1_0_;".freeze
     HTML_LINEBREAK = "&#10;".freeze
 
     def initialize(path)
+      @logger = FediEbooks::Logger.instance
       ActiveRecord::Base.logger = ActiveSupport::Logger.new($stderr)
       ActiveRecord::Base.logger.level = :error
 
@@ -79,7 +83,7 @@ module FediEbooks
       lines = []
       case extension
       when "json"
-        FediEbooks::Logger.log("Reading json corpus from #{path}")
+        @logger.log("Reading json corpus from #{path}")
         json_content = JSON.parse(content)
         twitter_json = content.include?("\"retweeted\": false")
 
@@ -97,7 +101,7 @@ module FediEbooks
           lines.compact! # Remove nil values
         end
       when "csv"
-        FediEbooks::Logger.log("Reading CSV corpus from #{path}")
+        @logger.log("Reading CSV corpus from #{path}")
         content = CSV.parse(content)
         header = content.shift
         text_col = header.index("text")
@@ -105,7 +109,7 @@ module FediEbooks
           tweet[text_col]
         end
       else
-        FediEbooks::Logger.log("Reading plaintext corpus from #{path} " \
+        @logger.log("Reading plaintext corpus from #{path} " \
             "(if this is a json or csv file, please rename the file with an extension and reconsume)")
 
         lines = content.split("\n")
@@ -135,7 +139,7 @@ module FediEbooks
     # Consume a sequence of lines
     # @param lines [Array<String>]
     def consume_lines(lines)
-      FediEbooks::Logger.log("Removing commented lines")
+      @logger.log("Removing commented lines")
 
       statements = []
       lines.each do |l|
@@ -146,12 +150,12 @@ module FediEbooks
 
       text = statements.join("\n").encode("UTF-8", invalid: :replace)
 
-      FediEbooks::Logger.log("Tokenizing #{text.count("\n")} statements")
+      @logger.log("Tokenizing #{text.count("\n")} statements")
       @sentences = mass_tikify(text)
 
-      FediEbooks::Logger.log("Ranking keywords")
+      @logger.log("Ranking keywords")
       @keywords = FediEbooks::NLP.keywords(text).top(200).map(&:to_s)
-      FediEbooks::Logger.log("Top keywords: #{@keywords[0]} #{@keywords[1]} #{@keywords[2]}")
+      @logger.log("Top keywords: #{@keywords[0]} #{@keywords[1]} #{@keywords[2]}")
 
       self
     end
@@ -189,7 +193,7 @@ module FediEbooks
       retries = 0
 
       while (tikis = generate_respoding(responding, 3, :bigrams, relevant_sentences, unigrams, bigrams))
-        # FediEbooks::Logger.log("Attempting to produce tweet try #{retries+1}/#{retry_limit}")
+        # @logger.log("Attempting to produce tweet try #{retries+1}/#{retry_limit}")
         break if (tikis.length > 3 || responding) && valid_tweet?(tikis, limit)
 
         retries += 1
@@ -197,7 +201,7 @@ module FediEbooks
       end
 
       if verbatim?(tikis) && tikis.length > 3 # We made a verbatim tweet by accident
-        # FediEbooks::Logger.log("Attempting to produce unigram tweet try #{retries+1}/#{retry_limit}")
+        # @logger.log("Attempting to produce unigram tweet try #{retries+1}/#{retry_limit}")
         while (tikis = generate_respoding(responding, 3, :unigrams, relevant_sentences, unigrams, bigrams))
           break if valid_tweet?(tikis, limit) && !verbatim?(tikis)
 
@@ -209,7 +213,7 @@ module FediEbooks
       tweet = reconstruct(tikis)
 
       if retries >= retry_limit
-        FediEbooks::Logger.log("Unable to produce valid non-verbatim tweet; using \"#{tweet}\"")
+        @logger.log("Unable to produce valid non-verbatim tweet; using \"#{tweet}\"")
       end
 
       fix(tweet)
@@ -297,7 +301,7 @@ module FediEbooks
       # Geneate default Unigrams and Bigrams
       default_generator
 
-      FediEbooks::Logger.log("Database file created, run the software again.")
+      @logger.log("Database file created, run the software again.")
       ActiveRecord::Base.clear_active_connections!
       exit 0
     end

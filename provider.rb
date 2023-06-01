@@ -9,6 +9,8 @@ require_relative "providers/misskey"
 
 module FediEbooks
   class Provider
+    @logger = FediEbooks::Logger.instance
+
     def self.select_provider
       case get_software
       when FediEbooks::Constants::InstanceType::PLEROMA
@@ -18,7 +20,7 @@ module FediEbooks
       when FediEbooks::Constants::InstanceType::MISSKEY
         FediEbooks::MisskeyProvider.new
       else
-        FediEbooks::Logger.log("Invalid instance type!")
+        @logger.log("Invalid instance type!")
         exit(1)
       end
     end
