@@ -3,7 +3,6 @@ require "rufus-scheduler"
 require_relative "config"
 require_relative "provider"
 require_relative "mispy/model"
-require_relative "mispy/nlp"
 
 module FediEbooks
   @provider = nil
@@ -25,7 +24,7 @@ module FediEbooks
     end
 
     model_path = "#{FediEbooks::Config.bot_username}.db"
-    @model = Model.new(model_path)
+    @model = FediEbooks::Model.new(model_path)
 
     if File.file?(model_path)
       FediEbooks::Logger.log("Database #{@model.path} loaded.")

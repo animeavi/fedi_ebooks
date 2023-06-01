@@ -18,7 +18,7 @@ module FediEbooks
       when FediEbooks::Constants::InstanceType::MISSKEY
         FediEbooks::MisskeyProvider.new
       else
-        FediEbooks::FediEbooks::Logger.log("Invalid instance type!")
+        FediEbooks::Logger.log("Invalid instance type!")
         exit(1)
       end
     end
