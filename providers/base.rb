@@ -7,6 +7,8 @@ require "yajl/json_gem"
 
 require_relative "../config"
 require_relative "../logger"
+require_relative "../mispy/model"
+require_relative "../mispy/nlp"
 
 module FediEbooks
   class BaseProvider
@@ -29,7 +31,7 @@ module FediEbooks
     end
 
     def support_not_implemented
-      FediEbooks::Logger.log("The #{name} provider does not support this operation!")
+      raise StandardError.new("The #{name} provider does not support this operation!")
       exit(1)
     end
 
