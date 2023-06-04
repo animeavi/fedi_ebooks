@@ -67,7 +67,7 @@ module FediEbooks
     @instance.reply(@model)
 
     # Comment this out if you want timeline replies
-    # reply_timeline(@model)
+    # @instance.reply_timeline(@model)
   end
 
   loop do
