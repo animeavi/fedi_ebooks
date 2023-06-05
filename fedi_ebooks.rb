@@ -45,7 +45,8 @@ module FediEbooks
 
   # Prettier errors
   def @scheduler.on_error(job, error)
-    @logger.log("Exception caught in scheduler thread #{error.inspect}!")
+    logger = FediEbooks::Logger.instance
+    logger.log("Exception caught in scheduler thread #{error.inspect}!")
 
     puts("\n------------ Backtrace Below ------------\n\n")
 
