@@ -289,8 +289,10 @@ module FediEbooks
         # Attempting to make the numbers in the array searchable by a SQL statement
         # It will look like this => |10|54|642|
 
-        @sentences.each_with_index do |d, i|
+        i = 0
+        @sentences.each do |d|
           worker.add sentence_id: i, sentence: array_to_record(d) unless d.empty?
+          i += 1
         end
       end
 
@@ -423,7 +425,7 @@ module FediEbooks
       content = content.gsub("<br/>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
       content = content.gsub("<p>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
       content = content.gsub(/<("[^"]*"|'[^']*'|[^'">])*>/, '') # Remove HTML
-      content = content.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
+      content = content.tr('“', '"').tr('”', '"').tr('’', "'").tr('…', '...')
       content = FediEbooks::NLP.htmlentities.decode(content)
 
       return nil if content.nil?
@@ -522,7 +524,8 @@ module FediEbooks
       0.upto(passes - 1) do
         varsites = {} # Map bigram start site => next tiki alternatives
 
-        tikis.each_with_index do |tiki, i|
+        i = 0
+        tikis.each do |tiki|
           next_tiki = tikis[i + 1]
           break if next_tiki.nil?
 
@@ -540,6 +543,7 @@ module FediEbooks
           # Filter out suffixes from previous sentences
           alternatives.reject! { |a| a[1] == INTERIM || used.include?(a[0]) }
           varsites[i] = alternatives unless alternatives.empty?
+          i += 1
         end
 
         variant = nil
@@ -601,9 +605,12 @@ module FediEbooks
       @unigrams = {}
       @bigrams = {}
 
-      @sentences.each_with_index do |tikis, i|
+      i = 0
+      @sentences.each do |tikis|
         last_tiki = INTERIM
-        tikis.each_with_index do |tiki, j|
+
+        j = 0
+        tikis.each do |tiki|
           @unigrams[last_tiki] ||= []
           @unigrams[last_tiki] << [i, j]
 
@@ -619,7 +626,10 @@ module FediEbooks
           end
 
           last_tiki = tiki
+          j += 1
         end
+
+        i += 1
       end
 
       Unigrams.bulk_insert do |worker|
@@ -651,9 +661,12 @@ module FediEbooks
       unigrams = {}
       bigrams = {}
 
-      sentences.each_with_index do |tikis, i|
+      i = 0
+      sentences.each do |tikis|
         last_tiki = INTERIM
-        tikis.each_with_index do |tiki, j|
+
+        j = 0
+        tikis.each do |tiki|
           unigrams[last_tiki] ||= []
           unigrams[last_tiki] << [i, j]
 
@@ -669,7 +682,10 @@ module FediEbooks
           end
 
           last_tiki = tiki
+          j += 1
         end
+
+        i += 1
       end
 
       [unigrams, bigrams]

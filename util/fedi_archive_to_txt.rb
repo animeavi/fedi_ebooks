@@ -56,7 +56,8 @@ statuses.each do |s|
     content = content.gsub("<br/>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
     content = content.gsub("<p>", " #{LINEBREAK_PLACEHOLDER} ") if html_linebreaks
     content = content.gsub(/<("[^"]*"|'[^']*'|[^'">])*>/, '') # Remove HTML
-    content = HTMLEntities.new.decode content.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...')
+    content = content.tr('“', '"').tr('”', '"').tr('’', "'").tr('…', '...')
+    content = HTMLEntities.new.decode(content)
 
     next if content.nil?
 

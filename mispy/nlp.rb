@@ -65,7 +65,7 @@ module FediEbooks
     # @return [String]
     def self.normalize(text)
       text = text.gsub("&#10;", "&_#_1_0_;")
-      text = htmlentities.decode(text.gsub('“', '"').gsub('”', '"').gsub('’', "'").gsub('…', '...'))
+      text = htmlentities.decode(text.tr('“', '"').tr('”', '"').tr('’', "'").tr('…', '...'))
       text.gsub("&_#_1_0_;", "&#10;")
     end
 
