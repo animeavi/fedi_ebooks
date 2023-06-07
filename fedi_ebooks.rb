@@ -18,6 +18,7 @@ module FediEbooks
 
     @instance = FediEbooks::Provider.select_provider()
     FediEbooks::Config.update_bot_username(@instance.get_username)
+    @logger.set_name("@#{FediEbooks::Config.bot_username}")
 
     if FediEbooks::Config.bot_username.nil?
       @logger.log("Unable to get the account's username! Check your credentials!")
