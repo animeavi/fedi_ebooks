@@ -97,6 +97,10 @@ module FediEbooks
                         headers: headers)
       return if tl.key?("errors")
 
+      keywords = model.get_keywords
+      top20 = keywords.take(20)
+      top100 = keywords.take(100)
+
       i = 0
       tl.each do |t|
         if i.zero?
@@ -130,8 +134,8 @@ module FediEbooks
         status_mentionless = get_status_mentionless(status_text, mentions)
 
         tokens = NLP.tokenize(status_mentionless)
-        interesting = tokens.find { |tk| $top100.include?(tk.downcase) }
-        very_interesting = tokens.find { |tk| $top20.include?(tk.downcase) }
+        interesting = tokens.find { |tk| top100.include?(tk.downcase) }
+        very_interesting = tokens.find { |tk| top20.include?(tk.downcase) }
 
         should_reply = false
         if very_interesting

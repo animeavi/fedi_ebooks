@@ -6,9 +6,6 @@ require_relative "mispy/model"
 
 module FediEbooks
   @model = nil
-  @top20 = nil
-  @top100 = nil
-
   @instance = nil
   @logger = FediEbooks::Logger.instance
   @scheduler = Rufus::Scheduler.new
@@ -34,10 +31,6 @@ module FediEbooks
       @logger.log("Creating database #{@model.path}...")
       @model.consume_all(FediEbooks::Config.corpus_files).save
     end
-
-    keywords = @model.get_keywords
-    @top20 = keywords.take(20)
-    @top100 = keywords.take(100)
 
     @logger.log("Connected to #{FediEbooks::Config.instance_url} (#{@instance.name})")
   end
