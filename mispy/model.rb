@@ -525,25 +525,27 @@ module FediEbooks
         varsites = {} # Map bigram start site => next tiki alternatives
 
         i = 0
-        tikis.each do |tiki|
-          next_tiki = tikis[i + 1]
-          break if next_tiki.nil?
+        unless tikis.nil?
+          tikis.each do |tiki|
+            next_tiki = tikis[i + 1]
+            break if next_tiki.nil?
 
-          alternatives = []
-          if sentences.nil?
-            alternatives = n == :unigrams ? query_unigrams(next_tiki) : query_bigrams(tiki, next_tiki)
-          elsif (n == :unigrams) && !unigrams.nil?
-            alternatives = unigrams[next_tiki] unless unigrams[next_tiki].nil?
-          elsif (n == :bigrams) && !bigrams.nil?
-            alternatives = bigrams[tiki][next_tiki] unless bigrams[tiki][next_tiki].nil?
+            alternatives = []
+            if sentences.nil?
+              alternatives = n == :unigrams ? query_unigrams(next_tiki) : query_bigrams(tiki, next_tiki)
+            elsif (n == :unigrams) && !unigrams.nil?
+              alternatives = unigrams[next_tiki] unless unigrams[next_tiki].nil?
+            elsif (n == :bigrams) && !bigrams.nil?
+              alternatives = bigrams[tiki][next_tiki] unless bigrams[tiki][next_tiki].nil?
+            end
+
+            next if alternatives.nil? || alternatives.empty?
+
+            # Filter out suffixes from previous sentences
+            alternatives.reject! { |a| a[1] == INTERIM || used.include?(a[0]) }
+            varsites[i] = alternatives unless alternatives.empty?
+            i += 1
           end
-
-          next if alternatives.nil? || alternatives.empty?
-
-          # Filter out suffixes from previous sentences
-          alternatives.reject! { |a| a[1] == INTERIM || used.include?(a[0]) }
-          varsites[i] = alternatives unless alternatives.empty?
-          i += 1
         end
 
         variant = nil
