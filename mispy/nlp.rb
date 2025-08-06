@@ -22,7 +22,7 @@ module FediEbooks
     # Stopwords are common words that should often be ignored
     # @return [Array<String>]
     def self.stopwords
-      @stopwords ||= File.exists?("data/stopwords.txt") ? File.read("data/stopwords.txt").split : []
+      @stopwords ||= File.exist?("data/stopwords.txt") ? File.read("data/stopwords.txt").split : []
     end
 
     # Lazily loads an array of known English nouns
